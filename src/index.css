@@ -1,0 +1,131 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Paleta Full Box — derivada de la landing page, llevada a corporativo.
+
+  Marca:
+    Cartón        #9c6b31 → hsl(33 52% 40%)   — acción primaria, item activo del menú
+    Cartón claro  #c08b4a → hsl(33 48% 52%)   — variante para modo oscuro
+    Verde petróleo #405050 → hsl(180 11% 28%) — --secondary (identidad de marca)
+
+  El sidebar es blanco (superficie clara separada del contenido por el borde),
+  con el cartón marcando el item activo.
+
+  Neutros (base Apple-like): blanco, #252525, #8e8e8e, #f7f7f7, #ebebeb.
+  Funcionales: éxito / advertencia / info — no existen en la landing pero un
+  panel de gestión los necesita para estados y alertas.
+
+  Toda la estética del sistema se ajusta ÚNICAMENTE acá — nunca con colores
+  hardcodeados en componentes.
+*/
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 14.5%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 14.5%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 14.5%;
+
+    /* Cartón — acción primaria (Guardar, Crear, CTA) */
+    --primary: 33 52% 40%;
+    --primary-foreground: 0 0% 98%;
+
+    /* Verde petróleo — secundario de marca */
+    --secondary: 180 11% 28%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 96.9%;
+    --muted-foreground: 0 0% 55.7%;
+
+    --accent: 0 0% 96.9%;
+    --accent-foreground: 0 0% 14.5%;
+
+    --destructive: 357 100% 45%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Funcionales para estados del panel */
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 14.5%;
+    --info: 221 83% 53%;
+    --info-foreground: 0 0% 98%;
+
+    --border: 0 0% 92.2%;
+    --input: 0 0% 92.2%;
+    --ring: 0 0% 71%;
+
+    --radius: 0.625rem;
+
+    /* Sidebar — blanco, con el cartón marcando el item activo */
+    --sidebar: 0 0% 100%;
+    --sidebar-foreground: 0 0% 14.5%;
+    --sidebar-muted-foreground: 0 0% 45%;
+    --sidebar-accent: 0 0% 96.9%;
+    --sidebar-accent-foreground: 0 0% 14.5%;
+    --sidebar-primary: 33 52% 40%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 92.2%;
+  }
+
+  .dark {
+    --background: 0 0% 14.5%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 20.4%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 20.4%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Cartón aclarado para contraste sobre fondos oscuros */
+    --primary: 33 48% 52%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 180 11% 32%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 20.4%;
+    --muted-foreground: 0 0% 71%;
+
+    --accent: 0 0% 25%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 357 91% 55%;
+    --destructive-foreground: 0 0% 98%;
+
+    --success: 142 69% 45%;
+    --success-foreground: 0 0% 98%;
+    --warning: 38 92% 55%;
+    --warning-foreground: 0 0% 14.5%;
+    --info: 217 91% 60%;
+    --info-foreground: 0 0% 98%;
+
+    --border: 0 0% 25.9%;
+    --input: 0 0% 25.9%;
+    --ring: 0 0% 55%;
+
+    --sidebar: 0 0% 20.4%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-muted-foreground: 0 0% 71%;
+    --sidebar-accent: 0 0% 25%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-primary: 33 48% 52%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 25.9%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
