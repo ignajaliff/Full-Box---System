@@ -259,9 +259,20 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
 * **Sidebar blanco**: los tokens `--sidebar-*` definen una superficie clara; el contenido va sobre
   `bg-muted` para que el sidebar se lea como panel separado. El item activo se marca con el cartón
   (`--sidebar-primary`). Todo el uso de esos tokens está contenido en `Sidebar.tsx` y `UserMenu.tsx`.
-* **Dos versiones del logo** en `src/assets/`: `logo-full-box.png` (cartón) en el login y
-  `logogrisoscuro.png` (gris oscuro) en el sidebar blanco. Al cambiar el fondo de alguno de los
-  dos, elegir la versión que contraste — no aplicar filtros CSS de inversión.
+* **Uso de los dos logos**: dentro de la interfaz (sidebar y login) se usa siempre
+  `src/assets/logogrisoscuro.png`. `src/assets/logo-full-box.png` (cartón) quedó como la
+  versión de marca externa: es la fuente de los íconos de `public/`. Sobre fondos claros el
+  gris oscuro va tal cual; en el panel verde del login se pasa a blanco con
+  `brightness-0 invert` porque no existe un PNG blanco del logo.
+* **Íconos del navegador** en `public/` (`favicon.ico` 16–64, `favicon.png` y
+  `apple-touch-icon.png` de 512), enlazados desde `index.html`. Se generaron desde el logo
+  cartón recortando la transparencia sobrante y centrándolo en un lienzo cuadrado con 8% de
+  margen — el logo original es muy horizontal (2.28:1) y sin ese recentrado se ve aplastado
+  en la pestaña. Si cambia el logo, regenerar los tres con ese mismo criterio.
+* **Login a pantalla dividida**: panel de marca (verde petróleo `bg-secondary` + un radial
+  sutil con el token `--primary`) a la izquierda y formulario a la derecha. Por debajo de `lg`
+  el panel se oculta y el logo pasa arriba del título. El copy quedó en un solo mensaje —
+  antes se repetía tres veces que el acceso es por invitación.
 
 ---
 
