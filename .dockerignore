@@ -1,0 +1,21 @@
+# Dependencias: se instalan dentro de la imagen con npm ci.
+# Copiar las de Windows además rompería los binarios nativos.
+node_modules
+dist
+
+# Credenciales: nunca dentro de la imagen. Los valores reales los inyecta
+# el entrypoint desde las variables de CapRover.
+.env
+.env.local
+.env.*.local
+
+.git
+.gitignore
+.vscode
+*.log
+.DS_Store
+
+# Documentación y reglas: no hacen falta para compilar.
+KNOW - HOW
+ai-pmp
+CLAUDE.md

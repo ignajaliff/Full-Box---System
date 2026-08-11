@@ -8,5 +8,11 @@ export const RUTA_DASHBOARD = "/dashboard"
 
 export const RUTA_PRODUCTOS = "/productos"
 
+export const RUTA_CLIENTES = "/clientes"
+
+export const RUTA_REMITOS = "/remitos"
+
+export const RUTA_FINANZAS = "/finanzas"
+
 /** Destino después de un login exitoso. */
 export const RUTA_INICIO = RUTA_DASHBOARD

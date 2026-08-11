@@ -1,7 +1,7 @@
 import { Box, Globe, Users, type LucideIcon } from "lucide-react"
 import { Link } from "react-router-dom"
 
-import { RUTA_PRODUCTOS } from "@/app/rutas"
+import { RUTA_CLIENTES, RUTA_PRODUCTOS } from "@/app/rutas"
 import { useAuth } from "@/features/auth/hooks/useAuth"
 import {
   Card,
@@ -30,6 +30,7 @@ const RESUMEN: ItemResumen[] = [
     titulo: "Clientes",
     descripcion: "Registro de clientes y encargos",
     icono: Users,
+    ruta: RUTA_CLIENTES,
   },
   {
     titulo: "Web",

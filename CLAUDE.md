@@ -60,6 +60,33 @@ npx tsc --noEmit     → verificación de tipos (correr antes de entregar cualqu
 
 ---
 
+## Deploy (CapRover)
+
+Archivos en la raíz: `captain-definition`, `Dockerfile`, `nginx.conf`,
+`docker-entrypoint.sh`, `.dockerignore`, `.gitattributes`.
+
+Imagen en dos etapas: `node:22-alpine` compila y `nginx:1.27-alpine` sirve el `dist`
+en el puerto 80 (el que espera CapRover).
+
+**Variables a cargar en CapRover** → App Configs → Environmental Variables:
+`VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY`.
+
+> **Por qué hay un entrypoint**: Vite reemplaza las `VITE_*` al COMPILAR, pero CapRover
+> define sus variables al ARRANCAR el contenedor. La imagen se compila con marcadores
+> (`__VITE_SUPABASE_URL__`) y `docker-entrypoint.sh` los reemplaza en el bundle al iniciar.
+> Ventajas: la misma imagen sirve para cualquier entorno, las credenciales no quedan
+> grabadas en la imagen y se pueden rotar sin recompilar. Si falta una variable, el
+> contenedor no arranca y lo dice en el log.
+>
+> Al agregar una `VITE_*` nueva hay que sumarla en tres lugares: el `ENV` con marcador del
+> `Dockerfile`, el `sed` de `docker-entrypoint.sh` y las variables de CapRover.
+
+`nginx.conf` tiene el fallback SPA (`try_files … /index.html`) — sin eso, entrar directo a
+`/remitos` o recargar da 404. El `index.html` va con `no-store` para que tras cada deploy
+el navegador tome los assets nuevos.
+
+---
+
 ## Módulos del sistema
 
 | Módulo | Estado | Tablas Supabase | Notas |
@@ -67,6 +94,9 @@ npx tsc --noEmit     → verificación de tipos (correr antes de entregar cualqu
 | Auth | Completo | `user_roles` | Login **real** con Supabase auth. Alta solo por invitación del admin |
 | Dashboard | UI lista | — | `/dashboard` con navegador lateral (AppLayout). Cards de resumen placeholder |
 | Productos | Completo | `productos` | `/productos` estilo CRM: buscador (nombre/medida/categoría), precio, badge de visibilidad web y estrella de destacado. Modal de edición completo en secciones (Información / Dimensiones / Comercial / Producción / Web) |
+| Clientes | Completo | `clientes` | `/clientes` estilo CRM: buscador (nombre/CUIT/email/teléfono), alta y edición por modal. CUIT único con formato validado en la base |
+| Remitos | Completo | `remitos`, `items_remito` | `/remitos`: creación con cliente + items (RPC `crear_remito`), filtro por estado, avance de estado y anulación con confirmación. Badges de estado y de cobro independientes |
+| Finanzas | Completo | `cobros` | `/finanzas`: pendientes de cobro agrupados por cliente con selección múltiple, cobro con precios editables (RPC `cobrar_remitos`) e historial de cobros |
 | Web | Pendiente | — | Controla el contenido de la landing page pública. "Pronto" en el sidebar |
 
 Estados posibles: `Pendiente` / `En desarrollo` / `UI lista` / `Completo`
@@ -76,17 +106,47 @@ Estados posibles: `Pendiente` / `En desarrollo` / `UI lista` / `Completo`
 ## Base de datos — Tablas creadas
 
 ```
-- user_roles  → rol de cada usuario (id → auth.users, nombre, rol)
-- productos   → catálogo de cajas. RLS: solo admin (lectura y escritura separadas
-                por comando, WITH CHECK en escritura). Columnas: nombre, medida,
-                slug, categoria, descripcion, largo/ancho/alto (cm), precio,
-                unidad_minima, desc_x100/x250/x500, tipo_carton, plazo_entrega,
-                admite_impresion, imagen_url, activo, destacado
+- user_roles   → rol de cada usuario (id → auth.users, nombre, rol)
+- productos    → catálogo de cajas. RLS: solo admin (lectura y escritura separadas
+                 por comando, WITH CHECK en escritura). Columnas: nombre, medida,
+                 slug, categoria, descripcion, largo/ancho/alto (cm), precio,
+                 unidad_minima, desc_x100/x250/x500, tipo_carton, plazo_entrega,
+                 admite_impresion, imagen_url, activo, destacado
+- clientes     → razon_social, cuit (único), condicion_iva, telefono, email,
+                 direccion_entrega
+- remitos      → numero (IDENTITY), cliente_id, estado, cobro_id, notas
+- items_remito → remito_id, producto_id, cantidad, precio_unitario (null hasta cobrar)
+- cobros       → numero (IDENTITY), cliente_id, metodo, nro_factura, total, fecha, notas
 ```
 
 > **Trigger `productos_normalizar`** (BEFORE INSERT/UPDATE): `medida` se autogenera desde
 > largo × ancho × alto (no editarla a mano) y `slug` se autogenera desde `nombre` si queda
 > vacío (con sufijo -2, -3… si colisiona). El frontend nunca envía `medida`.
+
+La tabla `clientes` (razon_social, cuit ÚNICO con formato validado, condicion_iva con CHECK,
+telefono, email, direccion_entrega) sigue el mismo patrón de RLS solo-admin que `productos`.
+
+### Módulo Remitos + Finanzas (construido 2026-08-08)
+
+* Tablas: `remitos` (numero IDENTITY, cliente_id, estado, cobro_id null = pendiente de cobro),
+  `items_remito` (producto_id, cantidad, precio_unitario **null hasta cobrar**, UNIQUE
+  remito+producto), `cobros` (numero IDENTITY, cliente_id, metodo con CHECK
+  efectivo/transferencia/facturado, nro_factura opcional, total, fecha). Todas RLS solo-admin.
+* Estados de remito: `nuevo → preparando → entregado` + `anulado`. El trigger
+  `remitos_validar_transicion` valida transiciones, prohíbe cambiar el estado de un remito
+  cobrado y exige estado `entregado` para asignar cobro_id. El estado de cobro es una
+  dimensión APARTE (derivada de cobro_id), no un estado más de la cadena.
+* **Sin precios al crear el remito** (decisión del cliente): se valoriza al cobrar. El
+  CobroDialog sugiere el precio de catálogo vigente, editable; al confirmar, los precios se
+  congelan en `items_remito.precio_unitario`.
+* RPCs transaccionales (SECURITY INVOKER, EXECUTE solo para authenticated):
+  `crear_remito(cliente, items, notas)` y
+  `cobrar_remitos(remito_ids[], metodo, precios{item_id→precio}, nro_factura?, notas?)` —
+  esta última exige remitos entregados, sin cobro previo y de un solo cliente, y usa
+  `FOR UPDATE` contra cobros simultáneos. Cobros de remitos COMPLETOS (sin pagos parciales).
+* Facturación manual por ahora (nro_factura a mano); afipsdk a futuro escribiría ahí.
+* El flujo de cobro vive en `/finanzas` (pendientes agrupados por cliente + historial).
+  Los hooks de finanzas reutilizan `SELECT_REMITO_DETALLE` de useRemitos.
 
 Funciones y triggers creados:
 * `public.tiene_rol(text)` — `SECURITY DEFINER`, `search_path` fijo, `EXECUTE` solo para
@@ -159,6 +219,11 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
   Al crear la página de un módulo, quitarle esa marca.
 * **Layout autenticado**: las rutas con sesión se envuelven en `AppLayout` (sidebar fijo a la
   izquierda + `<Outlet />`). El sidebar y el menú de usuario están en `shared/components/layout/`.
+* **Suspense DENTRO del layout, no alrededor de las rutas**: el boundary de las páginas lazy
+  vive en `AppLayout` (fallback `CargaContenido`, skeletons del área de contenido), así el
+  sidebar nunca se desmonta al navegar. Además `BrowserRouter` lleva
+  `future={{ v7_startTransition: true }}`: la página actual queda visible mientras se descarga
+  la siguiente. No volver a envolver rutas individuales en Suspense propio.
 * **Páginas a ancho completo**: el contenido de las páginas autenticadas usa todo el ancho
   disponible (`p-6 md:p-8`, sin `max-w-*` ni `mx-auto`). No volver a poner topes de ancho en
   módulos nuevos salvo pedido explícito.
@@ -179,6 +244,9 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
 * **Formulario de producto en secciones**: para respetar el límite de 300 líneas, el modal se
   compone de `CamposGenerales` + `CamposComerciales`, con helpers `CampoNumerico` (vacío → null)
   y `CampoBooleano` reutilizables en `features/productos/components/`.
+* **Select nativo estilizado** en
+  [src/shared/components/ui/native-select.tsx](src/shared/components/ui/native-select.tsx) para
+  listas cortas y fijas (ej. condición de IVA) — evita sumar `@radix-ui/react-select`.
 * **Formato de moneda centralizado** en
   [src/shared/utils/formatCurrency.ts](src/shared/utils/formatCurrency.ts) (`Intl`, es-AR/ARS),
   usado en la columna de precio. Fechas: [src/shared/utils/formatDate.ts](src/shared/utils/formatDate.ts).
@@ -199,10 +267,10 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
 
 ## Estado actual del desarrollo
 
-**Última sesión**: 2026-08-07
-**Próximo paso**: módulo Web (la landing ya puede leer de `productos`: activo, destacado, slug,
-imagen_url están listos). Pendientes de dashboard: cerrar signup público y activar leaked
-password protection.
+**Última sesión**: 2026-08-08
+**Próximo paso**: probar el circuito completo Remitos → Finanzas con datos reales y ajustar lo
+que pida el cliente. Después: módulo Web. Pendientes de dashboard: cerrar signup público y
+activar leaked password protection.
 
 **Lo que está funcionando**:
 * Estructura base del proyecto según `rules.txt` (`app/`, `features/`, `shared/`, `lib/`, `integrations/`)
@@ -215,6 +283,15 @@ password protection.
   medida o categoría), columna de precio (o «Consultar»), badge Visible/Oculto, estrella de
   destacado y fecha de alta. Modal de edición completo: información, dimensiones (medida
   autogenerada), comercial (precio, mínimos, descuentos), producción y web
+* **Clientes** (`/clientes`) conectado a Supabase: buscador (nombre/CUIT/email/teléfono),
+  alta con «Nuevo cliente» y edición por modal. CUIT único (formato validado por CHECK) con
+  mensaje amigable ante duplicados; condición de IVA con select nativo
+* **Remitos** (`/remitos`): creación transaccional (cliente + productos con cantidades),
+  filtros por estado y búsqueda, avance de estado desde el menú de cada fila y anulación
+  con diálogo de confirmación. Todo el circuito de estados validado por la base
+* **Finanzas** (`/finanzas`): remitos entregados pendientes de cobro agrupados por cliente,
+  selección múltiple, cobro con precios sugeridos del catálogo (editables) que se congelan
+  al confirmar, método + nro de factura opcional, e historial de cobros con totales
 * `ProtectedRoute` protegiendo las rutas autenticadas; menú de usuario con "Cerrar sesión"
 * `ErrorBoundary` + `PaginaError` en el layout raíz
 * `npx tsc --noEmit` y `npm run build` pasan sin errores

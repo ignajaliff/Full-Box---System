@@ -12,6 +12,134 @@ export type Database = {
   }
   public: {
     Tables: {
+      clientes: {
+        Row: {
+          condicion_iva: string | null
+          created_at: string
+          cuit: string | null
+          direccion_entrega: string | null
+          email: string | null
+          id: string
+          razon_social: string
+          telefono: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          condicion_iva?: string | null
+          created_at?: string
+          cuit?: string | null
+          direccion_entrega?: string | null
+          email?: string | null
+          id?: string
+          razon_social: string
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          condicion_iva?: string | null
+          created_at?: string
+          cuit?: string | null
+          direccion_entrega?: string | null
+          email?: string | null
+          id?: string
+          razon_social?: string
+          telefono?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      cobros: {
+        Row: {
+          cliente_id: string
+          created_at: string
+          fecha: string
+          id: string
+          metodo: string
+          notas: string | null
+          nro_factura: string | null
+          numero: number
+          total: number
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id: string
+          created_at?: string
+          fecha?: string
+          id?: string
+          metodo: string
+          notas?: string | null
+          nro_factura?: string | null
+          numero?: never
+          total: number
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          created_at?: string
+          fecha?: string
+          id?: string
+          metodo?: string
+          notas?: string | null
+          nro_factura?: string | null
+          numero?: never
+          total?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cobros_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      items_remito: {
+        Row: {
+          cantidad: number
+          created_at: string
+          id: string
+          precio_unitario: number | null
+          producto_id: string
+          remito_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string
+          id?: string
+          precio_unitario?: number | null
+          producto_id: string
+          remito_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          id?: string
+          precio_unitario?: number | null
+          producto_id?: string
+          remito_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "items_remito_producto_id_fkey"
+            columns: ["producto_id"]
+            isOneToOne: false
+            referencedRelation: "productos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_remito_remito_id_fkey"
+            columns: ["remito_id"]
+            isOneToOne: false
+            referencedRelation: "remitos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       productos: {
         Row: {
           activo: boolean
@@ -87,6 +215,54 @@ export type Database = {
         }
         Relationships: []
       }
+      remitos: {
+        Row: {
+          cliente_id: string
+          cobro_id: string | null
+          created_at: string
+          estado: string
+          id: string
+          notas: string | null
+          numero: number
+          updated_at: string | null
+        }
+        Insert: {
+          cliente_id: string
+          cobro_id?: string | null
+          created_at?: string
+          estado?: string
+          id?: string
+          notas?: string | null
+          numero?: never
+          updated_at?: string | null
+        }
+        Update: {
+          cliente_id?: string
+          cobro_id?: string | null
+          created_at?: string
+          estado?: string
+          id?: string
+          notas?: string | null
+          numero?: never
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remitos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remitos_cobro_id_fkey"
+            columns: ["cobro_id"]
+            isOneToOne: false
+            referencedRelation: "cobros"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -116,6 +292,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cobrar_remitos: {
+        Args: {
+          p_metodo: string
+          p_notas?: string
+          p_nro_factura?: string
+          p_precios: Json
+          p_remito_ids: string[]
+        }
+        Returns: string
+      }
+      crear_remito: {
+        Args: { p_cliente_id: string; p_items: Json; p_notas?: string }
+        Returns: string
+      }
       fmt_cm: { Args: { v: number }; Returns: string }
       tiene_rol: { Args: { rol_requerido: string }; Returns: boolean }
     }

@@ -1,0 +1,6 @@
+# El repo se edita en Windows pero la imagen corre en Linux: un script con
+# saltos CRLF falla dentro del contenedor con un error muy poco claro.
+*.sh text eol=lf
+Dockerfile text eol=lf
+nginx.conf text eol=lf
+captain-definition text eol=lf
