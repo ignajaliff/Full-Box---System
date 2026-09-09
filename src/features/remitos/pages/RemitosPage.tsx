@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react"
-import { FileText, Plus, Search } from "lucide-react"
+import { FileText, Plus } from "lucide-react"
 
-import { RemitoNuevoDialog } from "@/features/remitos/components/RemitoNuevoDialog"
+import { RemitoDialog } from "@/features/remitos/components/RemitoDialog"
 import { TablaRemitos } from "@/features/remitos/components/TablaRemitos"
 import {
   useCambiarEstadoRemito,
@@ -14,7 +14,19 @@ import {
   ETIQUETA_ESTADO,
   esEstadoRemito,
   formatNumeroRemito,
+  type EstadoRemito,
 } from "@/features/remitos/types"
+import {
+  BarraFiltros,
+  ChipsFiltro,
+} from "@/shared/components/layout/BarraFiltros"
+import { EstadoVacio } from "@/shared/components/layout/EstadoVacio"
+import {
+  FilaIndicadores,
+  FilaIndicadoresSkeleton,
+  type Indicador,
+} from "@/shared/components/layout/FilaIndicadores"
+import { PaginaConEncabezado } from "@/shared/components/layout/PaginaConEncabezado"
 import { Button } from "@/shared/components/ui/button"
 import { Card } from "@/shared/components/ui/card"
 import {
@@ -25,7 +37,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/shared/components/ui/dialog"
-import { NativeSelect } from "@/shared/components/ui/native-select"
 import { Skeleton } from "@/shared/components/ui/skeleton"
 
 const FILAS_SKELETON = 5
@@ -38,8 +49,13 @@ export default function RemitosPage() {
   const { data: remitos, isLoading, isError } = useRemitos()
   const cambiarEstado = useCambiarEstadoRemito()
   const [busqueda, setBusqueda] = useState("")
-  const [filtroEstado, setFiltroEstado] = useState("")
-  const [dialogoNuevo, setDialogoNuevo] = useState(false)
+  // null = todos los estados.
+  const [filtroEstado, setFiltroEstado] = useState<EstadoRemito | null>(null)
+  const [dialogoAbierto, setDialogoAbierto] = useState(false)
+  // null con el diálogo abierto = alta de un remito nuevo.
+  const [remitoEnEdicion, setRemitoEnEdicion] = useState<RemitoDetalle | null>(
+    null
+  )
   const [anulando, setAnulando] = useState<RemitoDetalle | null>(null)
 
   const filtrados = useMemo(() => {
@@ -47,7 +63,7 @@ export default function RemitosPage() {
     const termino = normalizar(busqueda)
 
     return remitos.filter((remito) => {
-      if (filtroEstado && remito.estado !== filtroEstado) return false
+      if (filtroEstado !== null && remito.estado !== filtroEstado) return false
       if (!termino) return true
       return (
         normalizar(remito.cliente?.razon_social ?? "").includes(termino) ||
@@ -56,6 +72,51 @@ export default function RemitosPage() {
       )
     })
   }, [remitos, busqueda, filtroEstado])
+
+  const resumen = useMemo<Indicador[] | null>(() => {
+    if (!remitos) return null
+
+    const contar = (estado: EstadoRemito) =>
+      remitos.filter((remito) => remito.estado === estado).length
+    const pendientesCobro = remitos.filter(
+      (remito) => remito.estado === "entregado" && remito.cobro_id === null
+    ).length
+
+    return [
+      {
+        etiqueta: "Remitos activos",
+        valor: String(
+          remitos.filter((remito) => remito.estado !== "anulado").length
+        ),
+        detalle: "sin contar anulados",
+      },
+      {
+        etiqueta: ETIQUETA_ESTADO.nuevo,
+        valor: String(contar("nuevo")),
+        detalle: "sin empezar",
+      },
+      {
+        etiqueta: ETIQUETA_ESTADO.preparando,
+        valor: String(contar("preparando")),
+        detalle: "en la fábrica",
+      },
+      {
+        etiqueta: "Pendientes de cobro",
+        valor: String(pendientesCobro),
+        detalle: "entregados sin cobrar",
+      },
+    ]
+  }, [remitos])
+
+  function abrirAlta() {
+    setRemitoEnEdicion(null)
+    setDialogoAbierto(true)
+  }
+
+  function abrirEdicion(remito: RemitoDetalle) {
+    setRemitoEnEdicion(remito)
+    setDialogoAbierto(true)
+  }
 
   function handleAvanzar(remito: RemitoDetalle) {
     if (!esEstadoRemito(remito.estado)) return
@@ -72,21 +133,44 @@ export default function RemitosPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 md:p-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Remitos</h1>
-          <p className="text-sm text-muted-foreground">
-            Órdenes de entrega de la fábrica: {ETIQUETA_ESTADO.nuevo} →{" "}
-            {ETIQUETA_ESTADO.preparando} → {ETIQUETA_ESTADO.entregado}. El cobro
-            se hace desde Finanzas.
-          </p>
-        </div>
-        <Button onClick={() => setDialogoNuevo(true)}>
+    <PaginaConEncabezado
+      titulo="Remitos"
+      descripcion={`Órdenes de entrega: ${ETIQUETA_ESTADO.nuevo} → ${ETIQUETA_ESTADO.preparando} → ${ETIQUETA_ESTADO.entregado}. El cobro se hace desde Finanzas.`}
+      acciones={
+        <Button size="sm" className="h-9" onClick={abrirAlta}>
           <Plus aria-hidden="true" />
           Nuevo remito
         </Button>
-      </header>
+      }
+    >
+      {isLoading ? <FilaIndicadoresSkeleton /> : null}
+      {resumen ? (
+        <FilaIndicadores
+          indicadores={resumen}
+          etiquetaAccesible="Resumen de remitos"
+        />
+      ) : null}
+
+      <BarraFiltros
+        busqueda={busqueda}
+        onBuscar={setBusqueda}
+        placeholder="Buscar por cliente o número…"
+        etiquetaBusqueda="Buscar remitos"
+        contador={
+          remitos
+            ? `${filtrados.length} de ${remitos.length} remitos`
+            : undefined
+        }
+      >
+        <ChipsFiltro
+          opciones={ESTADOS_REMITO}
+          seleccionada={filtroEstado}
+          onSeleccionar={setFiltroEstado}
+          etiquetaGrupo="Filtrar por estado"
+          etiquetaTodas="Todos"
+          etiquetaOpcion={(estado) => ETIQUETA_ESTADO[estado]}
+        />
+      </BarraFiltros>
 
       {isError ? (
         <p className="text-sm text-destructive">
@@ -94,39 +178,6 @@ export default function RemitosPage() {
         </p>
       ) : (
         <Card className="overflow-hidden rounded-xl">
-          <div className="flex flex-wrap items-center gap-3 border-b px-4 py-3">
-            <Search
-              className="h-4 w-4 shrink-0 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              value={busqueda}
-              onChange={(event) => setBusqueda(event.target.value)}
-              placeholder="Buscar por cliente o número…"
-              aria-label="Buscar remitos"
-              className="h-8 min-w-40 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-            <NativeSelect
-              value={filtroEstado}
-              onChange={(event) => setFiltroEstado(event.target.value)}
-              aria-label="Filtrar por estado"
-              className="h-8 w-40 py-0"
-            >
-              <option value="">Todos los estados</option>
-              {ESTADOS_REMITO.map((estado) => (
-                <option key={estado} value={estado}>
-                  {ETIQUETA_ESTADO[estado]}
-                </option>
-              ))}
-            </NativeSelect>
-            {remitos ? (
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                {filtrados.length} de {remitos.length}
-              </span>
-            ) : null}
-          </div>
-
           {isLoading ? (
             <div className="space-y-3 p-4">
               {Array.from({ length: FILAS_SKELETON }).map((_, indice) => (
@@ -139,34 +190,33 @@ export default function RemitosPage() {
             <TablaRemitos
               remitos={filtrados}
               onAvanzar={handleAvanzar}
+              onEditar={abrirEdicion}
               onAnular={setAnulando}
             />
           ) : null}
 
           {remitos && filtrados.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
-              <FileText
-                className="h-8 w-8 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <p className="text-sm font-medium">
-                {remitos.length === 0
+            <EstadoVacio
+              icono={FileText}
+              titulo={
+                remitos.length === 0
                   ? "Todavía no hay remitos"
-                  : "Sin resultados con esos filtros"}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {remitos.length === 0
+                  : "Sin resultados con esos filtros"
+              }
+              descripcion={
+                remitos.length === 0
                   ? "Creá el primero con el botón «Nuevo remito»."
-                  : "Probá con otro cliente, número o estado."}
-              </p>
-            </div>
+                  : "Probá con otro cliente, número o estado."
+              }
+            />
           ) : null}
         </Card>
       )}
 
-      <RemitoNuevoDialog
-        abierto={dialogoNuevo}
-        onCerrar={() => setDialogoNuevo(false)}
+      <RemitoDialog
+        abierto={dialogoAbierto}
+        remito={remitoEnEdicion}
+        onCerrar={() => setDialogoAbierto(false)}
       />
 
       {/* Confirmación de anulación (irreversible) */}
@@ -205,6 +255,6 @@ export default function RemitosPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PaginaConEncabezado>
   )
 }

@@ -11,13 +11,15 @@ export default {
     extend: {
       fontFamily: {
         sans: [
-          "Poppins",
+          "Instrument Sans",
           "ui-sans-serif",
           "system-ui",
           "sans-serif",
           "Apple Color Emoji",
           "Segoe UI Emoji",
         ],
+        // Toda cifra del panel (precios, medidas, fechas, contadores) va en mono.
+        mono: ["Spline Sans Mono", "ui-monospace", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -60,10 +62,19 @@ export default {
         warning: {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
+          soft: "hsl(var(--warning-soft))",
         },
         info: {
           DEFAULT: "hsl(var(--info))",
           foreground: "hsl(var(--info-foreground))",
+        },
+        shell: "hsl(var(--shell))",
+        lienzo: "hsl(var(--lienzo))",
+        surface: "hsl(var(--surface))",
+        hairline: "hsl(var(--hairline))",
+        "table-head": {
+          DEFAULT: "hsl(var(--table-head))",
+          foreground: "hsl(var(--table-head-foreground))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar))",

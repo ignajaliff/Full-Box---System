@@ -23,11 +23,11 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-primary"
         aria-label="Abrir menú de usuario"
       >
         <Avatar>
-          <AvatarFallback className="bg-primary text-primary-foreground">
+          <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground">
             {obtenerIniciales(usuario.nombre)}
           </AvatarFallback>
         </Avatar>

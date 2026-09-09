@@ -30,14 +30,15 @@ export const ESTADO_SIGUIENTE: Partial<Record<EstadoRemito, EstadoRemito>> = {
   preparando: "entregado",
 }
 
+/** Badges "pill" suaves del estilo CRM (ver decisiones en CLAUDE.md). */
 export const VARIANTE_BADGE_ESTADO: Record<
   EstadoRemito,
-  "secondary" | "warning" | "success" | "outline"
+  "info-soft" | "warning-soft" | "success-soft" | "muted"
 > = {
-  nuevo: "secondary",
-  preparando: "warning",
-  entregado: "success",
-  anulado: "outline",
+  nuevo: "info-soft",
+  preparando: "warning-soft",
+  entregado: "success-soft",
+  anulado: "muted",
 }
 
 export function esEstadoRemito(valor: string): valor is EstadoRemito {

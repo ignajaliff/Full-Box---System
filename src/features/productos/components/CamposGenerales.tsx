@@ -21,7 +21,7 @@ export function CamposGenerales({ control }: CamposGeneralesProps) {
   return (
     <>
       <section className="space-y-4">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-[11.5px] font-semibold text-muted-foreground">
           Información
         </h3>
 
@@ -97,7 +97,7 @@ export function CamposGenerales({ control }: CamposGeneralesProps) {
       </section>
 
       <section className="space-y-4 border-t pt-5">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-[11.5px] font-semibold text-muted-foreground">
           Dimensiones (cm)
         </h3>
 

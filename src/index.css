@@ -3,19 +3,20 @@
 @tailwind utilities;
 
 /*
-  Paleta Full Box — derivada de la landing page, llevada a corporativo.
+  Paleta Full Box — alineada a la landing page (2026-08-17): el sistema usaba
+  neutros GRISES FRÍOS (matiz 220) y se veía genérico; ahora el andamiaje
+  completo es cálido, como el sitio público.
 
-  Marca:
-    Cartón        #9c6b31 → hsl(33 52% 40%)   — acción primaria, item activo del menú
-    Cartón claro  #c08b4a → hsl(33 48% 52%)   — variante para modo oscuro
-    Verde petróleo #405050 → hsl(180 11% 28%) — --secondary (identidad de marca)
+  Marca (de la landing):
+    Cartón tostado #A97538 → hsl(32 50% 44%)  — --primary: acciones, item activo
+    Kraft          #A27F6D → hsl(20 22% 53%)  — --ring y neutros desaturados
+    Crema          #F5F1E1 → hsl(48 50% 92%)  — base del --shell
+    Charcoal       #333333 → hsl(0 0% 20%)    — --foreground
+    Verde petróleo #405050 → hsl(180 11% 28%) — --secondary (panel del login)
 
-  El sidebar es blanco (superficie clara separada del contenido por el borde),
-  con el cartón marcando el item activo.
-
-  Neutros (base Apple-like): blanco, #252525, #8e8e8e, #f7f7f7, #ebebeb.
-  Funcionales: éxito / advertencia / info — no existen en la landing pero un
-  panel de gestión los necesita para estados y alertas.
+  Neutros cálidos: bordes #e6dfd0, muted #f3efe6, gris cálido #7a6b60
+  ("kraft desaturado — gris cálido, no frío", regla heredada de la landing).
+  Funcionales: éxito / advertencia / info — el panel los necesita para estados.
 
   Toda la estética del sistema se ajusta ÚNICAMENTE acá — nunca con colores
   hardcodeados en componentes.
@@ -23,101 +24,151 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 14.5%;
+    --foreground: 0 0% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 14.5%;
+    --card-foreground: 0 0% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 14.5%;
+    --popover-foreground: 0 0% 20%;
 
-    /* Cartón — acción primaria (Guardar, Crear, CTA) */
-    --primary: 33 52% 40%;
+    /* Cartón tostado — acción primaria (Guardar, Crear, CTA) */
+    --primary: 32 50% 44%;
     --primary-foreground: 0 0% 98%;
 
     /* Verde petróleo — secundario de marca */
     --secondary: 180 11% 28%;
     --secondary-foreground: 0 0% 98%;
 
-    --muted: 0 0% 96.9%;
-    --muted-foreground: 0 0% 55.7%;
+    --muted: 42 35% 93%;
+    --muted-foreground: 25 12% 43%;
 
-    --accent: 0 0% 96.9%;
-    --accent-foreground: 0 0% 14.5%;
+    --accent: 42 35% 93%;
+    --accent-foreground: 0 0% 20%;
 
-    --destructive: 357 100% 45%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 6 68% 40%;
+    --destructive-foreground: 40 25% 97%;
 
-    /* Funcionales para estados del panel */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 14.5%;
-    --info: 221 83% 53%;
-    --info-foreground: 0 0% 98%;
+    /* Funcionales VIVOS pero cálidos (2026-08-17): saturación alta (62-78%)
+       para que los estados se distingan de un vistazo, con matices tirados
+       hacia el cálido y luz baja, así conviven con el cartón sin verse
+       genéricos ni apagados. Calibrados para ≥ 4.5:1 en el badge suave. */
+    --success: 142 65% 26%;
+    --success-foreground: 40 25% 97%;
+    --warning: 36 85% 48%;
+    --warning-foreground: 30 45% 14%;
+    /* Ámbar oscurecido: el --warning no contrasta como TEXTO sobre fondo
+       claro. Se usa solo en el badge suave (warning-soft). */
+    --warning-soft: 33 78% 30%;
+    --info: 208 62% 34%;
+    --info-foreground: 40 25% 97%;
 
-    --border: 0 0% 92.2%;
-    --input: 0 0% 92.2%;
-    --ring: 0 0% 71%;
+    /* Borde de contenedor: define el recorte de tarjetas y controles contra
+       el shell. Tiene que LEERSE — un gris demasiado claro hace que las
+       tarjetas se fundan con el fondo. */
+    --border: 41 31% 86%;
+    --input: 41 30% 84%;
+    /* Foco en kraft: cálido, como el ring de la landing. */
+    --ring: 20 22% 53%;
 
     --radius: 0.625rem;
 
-    /* Sidebar — blanco, con el cartón marcando el item activo */
-    --sidebar: 0 0% 100%;
-    --sidebar-foreground: 0 0% 14.5%;
-    --sidebar-muted-foreground: 0 0% 45%;
-    --sidebar-accent: 0 0% 96.9%;
-    --sidebar-accent-foreground: 0 0% 14.5%;
-    --sidebar-primary: 33 52% 40%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 92.2%;
+    /* --shell quedó SIN USO (2026-08-17): el layout dejó de ser un shell con
+       tarjetas flotantes; ahora sidebar y contenido van a ras, separados por
+       una línea. Se conserva el token por si vuelve un fondo de layout. */
+    --shell: 0 0% 100%;
+    --surface: 0 0% 100%;
+    /* Separador INTERNO (dentro de una tarjeta): más suave que --border,
+       porque ahí no divide superficies distintas. */
+    --hairline: 42 30% 91%;
+    /* Encabezado de tabla: gris neutro CLARO — la banda se separa del cuerpo
+       por el borde y los divisores, no por un fondo pesado. */
+    --table-head: 40 10% 96%;
+    --table-head-foreground: 30 8% 34%;
+
+    /* Fondo del área de contenido: gris NEUTRO muy claro (sin el tinte cálido
+       de --muted, que sobre superficie grande se lee anaranjado). Las tarjetas
+       blancas se recortan contra él. */
+    --lienzo: 220 14% 96.5%;
+
+
+    /* Sidebar — el GRIS OSCURO DEL LOGO (#383b3e, muestreado del PNG). Es un
+       gris apenas frío que hace de fondo neutro: el naranja de marca queda
+       para los detalles (item activo, avatar, foco). Superficie oscura: sus
+       tokens se definen acá y el componente no usa los globales (calibrados
+       para fondo claro). */
+    --sidebar: 210 5% 23%;
+    --sidebar-foreground: 210 12% 96%;
+    /* Texto secundario: gris claro del mismo matiz que la superficie. */
+    --sidebar-muted-foreground: 210 8% 72%;
+    /* Hover: un escalón más claro que la superficie. */
+    --sidebar-accent: 210 5% 30%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    /* Item activo: el cartón de marca, el detalle de color del navegador.
+       Va aclarado (70%) para llegar a AA como TEXTO sobre el fondo del item. */
+    --sidebar-primary: 34 60% 70%;
+    --sidebar-primary-foreground: 210 8% 13%;
+    /* Separadores internos del sidebar y su borde derecho. */
+    --sidebar-border: 210 5% 33%;
   }
 
   .dark {
-    --background: 0 0% 14.5%;
-    --foreground: 0 0% 98%;
+    /* Charcoal cálido (no negro puro) y texto crema, como el dark de la landing. */
+    --background: 20 9% 14.5%;
+    --foreground: 45 35% 93%;
 
-    --card: 0 0% 20.4%;
-    --card-foreground: 0 0% 98%;
+    --card: 22 9% 19%;
+    --card-foreground: 45 35% 93%;
 
-    --popover: 0 0% 20.4%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 22 9% 19%;
+    --popover-foreground: 45 35% 93%;
 
-    /* Cartón aclarado para contraste sobre fondos oscuros */
-    --primary: 33 48% 52%;
-    --primary-foreground: 0 0% 98%;
+    /* Cartón aclarado; el texto va oscuro, como el acento dark de la landing */
+    --primary: 34 57% 57%;
+    --primary-foreground: 20 9% 14%;
 
     --secondary: 180 11% 32%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary-foreground: 45 35% 93%;
 
-    --muted: 0 0% 20.4%;
-    --muted-foreground: 0 0% 71%;
+    --muted: 22 9% 21%;
+    --muted-foreground: 28 15% 66%;
 
-    --accent: 0 0% 25%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 22 9% 24%;
+    --accent-foreground: 45 35% 93%;
 
-    --destructive: 357 91% 55%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 6 66% 55%;
+    --destructive-foreground: 30 25% 10%;
 
-    --success: 142 69% 45%;
-    --success-foreground: 0 0% 98%;
-    --warning: 38 92% 55%;
-    --warning-foreground: 0 0% 14.5%;
-    --info: 217 91% 60%;
-    --info-foreground: 0 0% 98%;
+    --success: 142 55% 46%;
+    --success-foreground: 30 25% 10%;
+    --warning: 36 80% 56%;
+    --warning-foreground: 30 45% 12%;
+    --warning-soft: 36 78% 64%;
+    --info: 208 58% 56%;
+    --info-foreground: 30 25% 10%;
 
-    --border: 0 0% 25.9%;
-    --input: 0 0% 25.9%;
-    --ring: 0 0% 55%;
+    --border: 24 8% 31%;
+    --input: 24 8% 33%;
+    --ring: 20 22% 60%;
 
-    --sidebar: 0 0% 20.4%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-muted-foreground: 0 0% 71%;
-    --sidebar-accent: 0 0% 25%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-primary: 33 48% 52%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-border: 0 0% 25.9%;
+    /* Shell en oscuro: el fondo va más profundo que las tarjetas */
+    --shell: 20 10% 9%;
+    --surface: 21 9% 16%;
+    --hairline: 23 8% 25%;
+    --table-head: 24 7% 23%;
+    --table-head-foreground: 35 10% 74%;
+
+    --lienzo: 220 8% 11%;
+
+    /* En oscuro el gris del logo se profundiza. */
+    --sidebar: 210 6% 16%;
+    --sidebar-foreground: 210 12% 95%;
+    --sidebar-muted-foreground: 210 8% 70%;
+    --sidebar-accent: 210 5% 23%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-primary: 34 60% 70%;
+    --sidebar-primary-foreground: 210 8% 11%;
+    --sidebar-border: 210 5% 27%;
   }
 }
 

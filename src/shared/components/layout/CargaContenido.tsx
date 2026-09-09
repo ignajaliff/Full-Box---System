@@ -6,11 +6,12 @@ import { Skeleton } from "@/shared/components/ui/skeleton"
  */
 export function CargaContenido() {
   return (
-    <div className="space-y-6 p-6 md:p-8">
-      <div className="space-y-2">
+    <div className="flex flex-col gap-[18px] p-6 pb-12 md:px-7">
+      <div className="space-y-2 border-b border-hairline pb-4">
         <Skeleton className="h-7 w-48" />
         <Skeleton className="h-4 w-72" />
       </div>
+      <Skeleton className="h-[104px] w-full rounded-xl" />
       <Skeleton className="h-72 w-full rounded-xl" />
     </div>
   )

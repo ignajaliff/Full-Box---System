@@ -14,5 +14,13 @@ export const RUTA_REMITOS = "/remitos"
 
 export const RUTA_FINANZAS = "/finanzas"
 
+/**
+ * Subpáginas de Finanzas. Entrar a `/finanzas` redirige a la primera
+ * (historial), que es la vista de consulta habitual.
+ */
+export const RUTA_FINANZAS_HISTORIAL = "/finanzas/historial"
+
+export const RUTA_FINANZAS_PENDIENTES = "/finanzas/pendientes"
+
 /** Destino después de un login exitoso. */
 export const RUTA_INICIO = RUTA_DASHBOARD

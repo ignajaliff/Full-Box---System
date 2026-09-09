@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import type { ProductoInput } from "@/features/productos/schema"
+import type { Producto } from "@/features/productos/types"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "@/shared/hooks/use-toast"
 
@@ -23,6 +24,54 @@ export function useProductos() {
 
       if (error) throw error
       return data
+    },
+  })
+}
+
+type AlternarVisibilidadArgs = {
+  id: string
+  activo: boolean
+}
+
+/**
+ * Publica/oculta un producto desde el switch de la tabla, con actualización
+ * optimista: el switch responde al instante y se revierte si la base falla.
+ */
+export function useAlternarVisibilidad() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ id, activo }: AlternarVisibilidadArgs) => {
+      const { error } = await supabase
+        .from("productos")
+        .update({ activo })
+        .eq("id", id)
+
+      if (error) throw error
+    },
+    onMutate: async ({ id, activo }) => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEY_PRODUCTOS })
+      const previo = queryClient.getQueryData<Producto[]>(QUERY_KEY_PRODUCTOS)
+
+      queryClient.setQueryData<Producto[]>(QUERY_KEY_PRODUCTOS, (productos) =>
+        productos?.map((p) => (p.id === id ? { ...p, activo } : p))
+      )
+
+      return { previo }
+    },
+    onError: (error, _variables, contexto) => {
+      if (contexto?.previo) {
+        queryClient.setQueryData(QUERY_KEY_PRODUCTOS, contexto.previo)
+      }
+      toast({
+        title: "No se pudo cambiar la visibilidad",
+        description: "Intentá de nuevo o contactá al administrador.",
+        variant: "destructive",
+      })
+      if (import.meta.env.DEV) console.error(error)
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTOS })
     },
   })
 }

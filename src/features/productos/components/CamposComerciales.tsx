@@ -21,7 +21,7 @@ export function CamposComerciales({ control }: CamposComercialesProps) {
   return (
     <>
       <section className="space-y-4 border-t pt-5">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-[11.5px] font-semibold text-muted-foreground">
           Comercial
         </h3>
 
@@ -61,7 +61,7 @@ export function CamposComerciales({ control }: CamposComercialesProps) {
       </section>
 
       <section className="space-y-4 border-t pt-5">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-[11.5px] font-semibold text-muted-foreground">
           Producción
         </h3>
 
@@ -108,7 +108,7 @@ export function CamposComerciales({ control }: CamposComercialesProps) {
       </section>
 
       <section className="space-y-4 border-t pt-5">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        <h3 className="text-[11.5px] font-semibold text-muted-foreground">
           Web
         </h3>
 

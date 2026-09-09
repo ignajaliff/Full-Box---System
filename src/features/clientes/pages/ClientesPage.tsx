@@ -1,10 +1,18 @@
 import { useMemo, useState } from "react"
-import { Plus, Search, Users } from "lucide-react"
+import { Plus, Users } from "lucide-react"
 
 import { ClienteDialog } from "@/features/clientes/components/ClienteDialog"
 import { TablaClientes } from "@/features/clientes/components/TablaClientes"
 import { useClientes } from "@/features/clientes/hooks/useClientes"
 import type { Cliente } from "@/features/clientes/types"
+import { BarraFiltros } from "@/shared/components/layout/BarraFiltros"
+import { PaginaConEncabezado } from "@/shared/components/layout/PaginaConEncabezado"
+import { EstadoVacio } from "@/shared/components/layout/EstadoVacio"
+import {
+  FilaIndicadores,
+  FilaIndicadoresSkeleton,
+  type Indicador,
+} from "@/shared/components/layout/FilaIndicadores"
 import { Button } from "@/shared/components/ui/button"
 import { Card } from "@/shared/components/ui/card"
 import { Skeleton } from "@/shared/components/ui/skeleton"
@@ -36,6 +44,45 @@ export default function ClientesPage() {
     )
   }, [clientes, busqueda])
 
+  const resumen = useMemo<Indicador[] | null>(() => {
+    if (!clientes) return null
+
+    const conCuit = clientes.filter(
+      (cliente) => cliente.cuit !== null && cliente.cuit.trim() !== ""
+    ).length
+    const conContacto = clientes.filter(
+      (cliente) => cliente.email !== null || cliente.telefono !== null
+    ).length
+    const condiciones = new Set(
+      clientes
+        .map((cliente) => cliente.condicion_iva)
+        .filter((condicion): condicion is string => condicion !== null)
+    )
+
+    return [
+      {
+        etiqueta: "Total de clientes",
+        valor: String(clientes.length),
+        detalle: "en el registro",
+      },
+      {
+        etiqueta: "Con CUIT cargado",
+        valor: String(conCuit),
+        detalle: "listos para facturar",
+      },
+      {
+        etiqueta: "Con contacto",
+        valor: String(conContacto),
+        detalle: "email o teléfono",
+      },
+      {
+        etiqueta: "Condiciones de IVA",
+        valor: String(condiciones.size),
+        detalle: "distintas en uso",
+      },
+    ]
+  }, [clientes])
+
   function abrirAlta() {
     setClienteEnEdicion(null)
     setDialogoAbierto(true)
@@ -47,19 +94,35 @@ export default function ClientesPage() {
   }
 
   return (
-    <div className="space-y-6 p-6 md:p-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Clientes</h1>
-          <p className="text-sm text-muted-foreground">
-            Registro de clientes de la fábrica, base para remitos y facturación.
-          </p>
-        </div>
-        <Button onClick={abrirAlta}>
+    <PaginaConEncabezado
+      titulo="Clientes"
+      descripcion="Registro de clientes de la fábrica, base para remitos y facturación."
+      acciones={
+        <Button size="sm" className="h-9" onClick={abrirAlta}>
           <Plus aria-hidden="true" />
           Nuevo cliente
         </Button>
-      </header>
+      }
+    >
+      {isLoading ? <FilaIndicadoresSkeleton /> : null}
+      {resumen ? (
+        <FilaIndicadores
+          indicadores={resumen}
+          etiquetaAccesible="Resumen de clientes"
+        />
+      ) : null}
+
+      <BarraFiltros
+        busqueda={busqueda}
+        onBuscar={setBusqueda}
+        placeholder="Buscar por nombre, CUIT, email o teléfono…"
+        etiquetaBusqueda="Buscar clientes"
+        contador={
+          clientes
+            ? `${filtrados.length} de ${clientes.length} clientes`
+            : undefined
+        }
+      />
 
       {isError ? (
         <p className="text-sm text-destructive">
@@ -67,26 +130,6 @@ export default function ClientesPage() {
         </p>
       ) : (
         <Card className="overflow-hidden rounded-xl">
-          <div className="flex items-center gap-3 border-b px-4 py-3">
-            <Search
-              className="h-4 w-4 shrink-0 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <input
-              type="search"
-              value={busqueda}
-              onChange={(event) => setBusqueda(event.target.value)}
-              placeholder="Buscar por nombre, CUIT, email o teléfono…"
-              aria-label="Buscar clientes"
-              className="h-8 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-            {clientes ? (
-              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                {filtrados.length} de {clientes.length}
-              </span>
-            ) : null}
-          </div>
-
           {isLoading ? (
             <div className="space-y-3 p-4">
               {Array.from({ length: FILAS_SKELETON }).map((_, indice) => (
@@ -100,22 +143,19 @@ export default function ClientesPage() {
           ) : null}
 
           {clientes && filtrados.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 px-6 py-14 text-center">
-              <Users
-                className="h-8 w-8 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <p className="text-sm font-medium">
-                {clientes.length === 0
+            <EstadoVacio
+              icono={Users}
+              titulo={
+                clientes.length === 0
                   ? "Todavía no hay clientes cargados"
-                  : `Sin resultados para «${busqueda.trim()}»`}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {clientes.length === 0
+                  : "Sin resultados para esa búsqueda"
+              }
+              descripcion={
+                clientes.length === 0
                   ? "Creá el primero con el botón «Nuevo cliente»."
-                  : "Probá con otro nombre, CUIT o teléfono."}
-              </p>
-            </div>
+                  : "Probá con otro nombre, CUIT o teléfono."
+              }
+            />
           ) : null}
         </Card>
       )}
@@ -125,6 +165,6 @@ export default function ClientesPage() {
         cliente={clienteEnEdicion}
         onCerrar={() => setDialogoAbierto(false)}
       />
-    </div>
+    </PaginaConEncabezado>
   )
 }

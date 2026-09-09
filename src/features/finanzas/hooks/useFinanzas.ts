@@ -32,9 +32,13 @@ export function usePendientesCobro() {
 }
 
 async function obtenerCobros() {
+  // Trae los remitos con sus items (y el precio congelado de cada uno) para
+  // poder desplegar el desglose sin una consulta extra por fila.
   const { data, error } = await supabase
     .from("cobros")
-    .select("*, cliente:clientes(razon_social)")
+    .select(
+      "*, cliente:clientes(razon_social), remitos(id, numero, items:items_remito(id, cantidad, precio_unitario, producto:productos(nombre, medida)))"
+    )
     .order("numero", { ascending: false })
 
   if (error) throw error

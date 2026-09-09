@@ -14,6 +14,14 @@ const badgeVariants = cva(
         warning: "border-transparent bg-warning text-warning-foreground",
         destructive:
           "border-transparent bg-destructive text-destructive-foreground",
+        // Variantes "pill" suaves: fondo tenue del mismo token, texto de color.
+        // Son las del estilo CRM — preferirlas sobre las sólidas en tablas.
+        "success-soft": "border-transparent bg-success/15 text-success",
+        "warning-soft": "border-transparent bg-warning/20 text-warning-soft",
+        "info-soft": "border-transparent bg-info/15 text-info",
+        "destructive-soft":
+          "border-transparent bg-destructive/12 text-destructive",
+        muted: "border-transparent bg-muted text-muted-foreground",
       },
     },
     defaultVariants: { variant: "default" },

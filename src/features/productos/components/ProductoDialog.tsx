@@ -32,8 +32,10 @@ export function ProductoDialog({ producto, onCerrar }: ProductoDialogProps) {
         if (!abierto && !mutation.isPending) onCerrar()
       }}
     >
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-        <DialogHeader>
+      {/* Mismo ancho que el panel de remitos: las dos columnas del
+          formulario necesitan espacio. */}
+      <DialogContent variante="panel" className="sm:max-w-2xl">
+        <DialogHeader className="border-b border-hairline px-5 py-4">
           <DialogTitle>Editar producto</DialogTitle>
           <DialogDescription>
             Modificá los datos del producto y guardá los cambios.

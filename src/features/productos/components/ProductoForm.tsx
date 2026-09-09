@@ -49,20 +49,27 @@ export function ProductoForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onGuardar)} className="space-y-5">
-        <CamposGenerales control={form.control} />
-        <CamposComerciales control={form.control} />
+      {/* Columna del panel lateral: los campos scrollean, el pie queda fijo. */}
+      <form
+        onSubmit={form.handleSubmit(onGuardar)}
+        className="flex min-h-0 flex-1 flex-col"
+      >
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
+          <CamposGenerales control={form.control} />
+          <CamposComerciales control={form.control} />
+        </div>
 
-        <DialogFooter className="border-t pt-4">
+        <DialogFooter className="border-t border-hairline p-4">
           <Button
             type="button"
             variant="outline"
             onClick={onCancelar}
             disabled={guardando}
+            className="sm:flex-1"
           >
             Cancelar
           </Button>
-          <Button type="submit" disabled={guardando}>
+          <Button type="submit" disabled={guardando} className="sm:flex-1">
             {guardando ? (
               <>
                 <Loader2 className="animate-spin" aria-hidden="true" />

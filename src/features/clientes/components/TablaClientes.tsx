@@ -18,27 +18,33 @@ type TablaClientesProps = {
   onEditar: (cliente: Cliente) => void
 }
 
+const CLASE_TH = "h-11 text-[11px] font-bold uppercase tracking-[0.05em] text-table-head-foreground"
+
+function iniciales(nombre: string) {
+  const palabras = nombre.trim().split(/\s+/)
+  return (
+    palabras
+      .slice(0, 2)
+      .map((palabra) => palabra[0]?.toUpperCase() ?? "")
+      .join("") || "?"
+  )
+}
+
 export function TablaClientes({ clientes, onEditar }: TablaClientesProps) {
   return (
-    <Table>
-      <TableHeader>
+    <Table className="[&_td]:py-2.5">
+      <TableHeader className="border-b border-border bg-table-head [&_th:not(:last-child)]:border-r [&_th]:border-border/60">
         <TableRow className="hover:bg-transparent">
-          <TableHead className="text-xs uppercase tracking-wider">
-            Cliente
-          </TableHead>
-          <TableHead className="text-xs uppercase tracking-wider">
-            CUIT
-          </TableHead>
-          <TableHead className="hidden text-xs uppercase tracking-wider md:table-cell">
+          <TableHead className={CLASE_TH}>Cliente</TableHead>
+          <TableHead className={CLASE_TH}>CUIT</TableHead>
+          <TableHead className={`hidden md:table-cell ${CLASE_TH}`}>
             Condición IVA
           </TableHead>
-          <TableHead className="text-xs uppercase tracking-wider">
-            Teléfono
-          </TableHead>
-          <TableHead className="hidden text-xs uppercase tracking-wider lg:table-cell">
+          <TableHead className={CLASE_TH}>Teléfono</TableHead>
+          <TableHead className={`hidden lg:table-cell ${CLASE_TH}`}>
             Alta
           </TableHead>
-          <TableHead className="w-12">
+          <TableHead className="h-11 w-12">
             <span className="sr-only">Acciones</span>
           </TableHead>
         </TableRow>
@@ -47,29 +53,45 @@ export function TablaClientes({ clientes, onEditar }: TablaClientesProps) {
         {clientes.map((cliente) => (
           <TableRow
             key={cliente.id}
-            className="cursor-pointer"
+            className="cursor-pointer border-hairline hover:bg-muted/40"
             onClick={() => onEditar(cliente)}
           >
             <TableCell>
-              <p className="font-medium">{cliente.razon_social}</p>
-              {cliente.email ? (
-                <p className="text-xs text-muted-foreground">{cliente.email}</p>
-              ) : null}
+              <div className="flex min-w-0 items-center gap-3">
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[7px] bg-muted text-[11px] font-bold text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  {iniciales(cliente.razon_social)}
+                </div>
+                <div className="flex min-w-0 flex-col">
+                  <span className="truncate font-medium">
+                    {cliente.razon_social}
+                  </span>
+                  {cliente.email ? (
+                    <span className="truncate text-[11px] text-muted-foreground">
+                      {cliente.email}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
             </TableCell>
-            <TableCell className="tabular-nums text-muted-foreground">
+            <TableCell className="whitespace-nowrap font-mono text-[12.5px] tabular-nums text-muted-foreground">
               {cliente.cuit ?? "—"}
             </TableCell>
             <TableCell className="hidden md:table-cell">
               {cliente.condicion_iva ? (
-                <Badge variant="outline">{cliente.condicion_iva}</Badge>
+                <Badge variant="muted" className="font-normal">
+                  {cliente.condicion_iva}
+                </Badge>
               ) : (
                 <span className="text-muted-foreground">—</span>
               )}
             </TableCell>
-            <TableCell className="text-muted-foreground">
+            <TableCell className="whitespace-nowrap font-mono text-[12.5px] tabular-nums text-muted-foreground">
               {cliente.telefono ?? "—"}
             </TableCell>
-            <TableCell className="hidden text-muted-foreground lg:table-cell">
+            <TableCell className="hidden font-mono text-[12.5px] tabular-nums text-muted-foreground lg:table-cell">
               {formatDate(cliente.created_at)}
             </TableCell>
             <TableCell className="py-1.5 text-right">

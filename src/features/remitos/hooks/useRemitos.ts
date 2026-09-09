@@ -61,6 +61,47 @@ export function useCrearRemito() {
   })
 }
 
+type EditarRemitoArgs = {
+  id: string
+  datos: RemitoInput
+}
+
+export function useEditarRemito() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    // RPC transaccional: cliente, notas e items se reemplazan todo-o-nada.
+    // Rechaza remitos cobrados o anulados.
+    mutationFn: async ({ id, datos }: EditarRemitoArgs) => {
+      const { error } = await supabase.rpc("editar_remito", {
+        p_remito_id: id,
+        p_cliente_id: datos.cliente_id,
+        p_items: datos.items,
+        p_notas: datos.notas.trim() || undefined,
+      })
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      toast({ title: "Remito actualizado" })
+      queryClient.invalidateQueries({ queryKey: ["remitos"] })
+      queryClient.invalidateQueries({ queryKey: ["finanzas"] })
+    },
+    onError: (error) => {
+      toast({
+        title: "No se pudo guardar el remito",
+        // La base rechaza cobrados/anulados y productos repetidos.
+        description:
+          error instanceof Error
+            ? error.message
+            : "Intentá de nuevo o contactá al administrador.",
+        variant: "destructive",
+      })
+      if (import.meta.env.DEV) console.error(error)
+    },
+  })
+}
+
 type CambiarEstadoArgs = {
   id: string
   estado: EstadoRemito

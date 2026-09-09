@@ -40,8 +40,8 @@ export function ClienteDialog({ abierto, cliente, onCerrar }: ClienteDialogProps
         if (!estaAbierto && !guardando) onCerrar()
       }}
     >
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
-        <DialogHeader>
+      <DialogContent variante="panel" className="sm:max-w-2xl">
+        <DialogHeader className="border-b border-hairline px-5 py-4">
           <DialogTitle>
             {cliente ? "Editar cliente" : "Nuevo cliente"}
           </DialogTitle>
