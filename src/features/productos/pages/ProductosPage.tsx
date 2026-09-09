@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import { PackageSearch } from "lucide-react"
+import { PackageSearch, Plus } from "lucide-react"
 
 import { CajaPersonalizada } from "@/features/productos/components/CajaPersonalizada"
 import { ProductoDialog } from "@/features/productos/components/ProductoDialog"
@@ -12,6 +12,7 @@ import {
 } from "@/shared/components/layout/BarraFiltros"
 import { PaginaConEncabezado } from "@/shared/components/layout/PaginaConEncabezado"
 import { EstadoVacio } from "@/shared/components/layout/EstadoVacio"
+import { Button } from "@/shared/components/ui/button"
 import { Card } from "@/shared/components/ui/card"
 import { Skeleton } from "@/shared/components/ui/skeleton"
 
@@ -26,9 +27,21 @@ export default function ProductosPage() {
   const [busqueda, setBusqueda] = useState("")
   // null = todas las categorías.
   const [categoria, setCategoria] = useState<string | null>(null)
+  const [dialogoAbierto, setDialogoAbierto] = useState(false)
+  // null con el diálogo abierto = alta de un producto nuevo.
   const [productoEnEdicion, setProductoEnEdicion] = useState<Producto | null>(
     null
   )
+
+  function abrirAlta() {
+    setProductoEnEdicion(null)
+    setDialogoAbierto(true)
+  }
+
+  function abrirEdicion(producto: Producto) {
+    setProductoEnEdicion(producto)
+    setDialogoAbierto(true)
+  }
 
   const categorias = useMemo(() => {
     if (!productos) return []
@@ -62,6 +75,12 @@ export default function ProductosPage() {
     <PaginaConEncabezado
       titulo="Productos"
       descripcion="Catálogo de cajas de la fábrica."
+      acciones={
+        <Button size="sm" className="h-9" onClick={abrirAlta}>
+          <Plus aria-hidden="true" />
+          Crear producto
+        </Button>
+      }
     >
       <CajaPersonalizada />
 
@@ -99,10 +118,7 @@ export default function ProductosPage() {
           ) : null}
 
           {productos && filtrados.length > 0 ? (
-            <TablaProductos
-              productos={filtrados}
-              onEditar={setProductoEnEdicion}
-            />
+            <TablaProductos productos={filtrados} onEditar={abrirEdicion} />
           ) : null}
 
           {productos && filtrados.length === 0 ? (
@@ -115,7 +131,7 @@ export default function ProductosPage() {
               }
               descripcion={
                 productos.length === 0
-                  ? "Los productos que se carguen van a aparecer acá."
+                  ? "Creá el primero con el botón «Crear producto»."
                   : "Probá con otro nombre, medida o categoría."
               }
             />
@@ -124,8 +140,9 @@ export default function ProductosPage() {
       )}
 
       <ProductoDialog
+        abierto={dialogoAbierto}
         producto={productoEnEdicion}
-        onCerrar={() => setProductoEnEdicion(null)}
+        onCerrar={() => setDialogoAbierto(false)}
       />
     </PaginaConEncabezado>
   )

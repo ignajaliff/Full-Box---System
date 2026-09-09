@@ -13,6 +13,33 @@ function aNulo(valor: string) {
   return recortado === "" ? null : recortado
 }
 
+/**
+ * Campos del formulario → fila de `productos`. `medida` no se incluye: la
+ * calcula el trigger `productos_normalizar` desde largo × ancho × alto.
+ */
+function aFilaProducto(datos: ProductoInput) {
+  return {
+    nombre: datos.nombre,
+    slug: aNulo(datos.slug),
+    categoria: aNulo(datos.categoria),
+    descripcion: aNulo(datos.descripcion),
+    largo: datos.largo,
+    ancho: datos.ancho,
+    alto: datos.alto,
+    precio: datos.precio,
+    unidad_minima: datos.unidad_minima,
+    desc_x100: datos.desc_x100,
+    desc_x250: datos.desc_x250,
+    desc_x500: datos.desc_x500,
+    tipo_carton: aNulo(datos.tipo_carton),
+    plazo_entrega: aNulo(datos.plazo_entrega),
+    admite_impresion: datos.admite_impresion,
+    imagen_url: aNulo(datos.imagen_url),
+    activo: datos.activo,
+    destacado: datos.destacado,
+  }
+}
+
 export function useProductos() {
   return useQuery({
     queryKey: QUERY_KEY_PRODUCTOS,
@@ -76,6 +103,35 @@ export function useAlternarVisibilidad() {
   })
 }
 
+export function useCrearProducto() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (datos: ProductoInput) => {
+      // `medida` es NOT NULL sin default, así que el tipo generado la exige en
+      // el insert. Va vacía a propósito: el trigger `productos_normalizar`
+      // (BEFORE INSERT) la reescribe desde largo × ancho × alto.
+      const { error } = await supabase
+        .from("productos")
+        .insert({ ...aFilaProducto(datos), medida: "" })
+
+      if (error) throw error
+    },
+    onSuccess: () => {
+      toast({ title: "Producto creado" })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTOS })
+    },
+    onError: (error) => {
+      toast({
+        title: "Error al crear el producto",
+        description: "Intentá de nuevo o contactá al administrador.",
+        variant: "destructive",
+      })
+      if (import.meta.env.DEV) console.error(error)
+    },
+  })
+}
+
 type ActualizarProductoArgs = {
   id: string
   datos: ProductoInput
@@ -85,30 +141,10 @@ export function useActualizarProducto() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    // `medida` no se envía: la calcula el trigger desde largo × ancho × alto.
     mutationFn: async ({ id, datos }: ActualizarProductoArgs) => {
       const { error } = await supabase
         .from("productos")
-        .update({
-          nombre: datos.nombre,
-          slug: aNulo(datos.slug),
-          categoria: aNulo(datos.categoria),
-          descripcion: aNulo(datos.descripcion),
-          largo: datos.largo,
-          ancho: datos.ancho,
-          alto: datos.alto,
-          precio: datos.precio,
-          unidad_minima: datos.unidad_minima,
-          desc_x100: datos.desc_x100,
-          desc_x250: datos.desc_x250,
-          desc_x500: datos.desc_x500,
-          tipo_carton: aNulo(datos.tipo_carton),
-          plazo_entrega: aNulo(datos.plazo_entrega),
-          admite_impresion: datos.admite_impresion,
-          imagen_url: aNulo(datos.imagen_url),
-          activo: datos.activo,
-          destacado: datos.destacado,
-        })
+        .update(aFilaProducto(datos))
         .eq("id", id)
 
       if (error) throw error

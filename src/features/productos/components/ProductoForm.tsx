@@ -11,7 +11,8 @@ import { DialogFooter } from "@/shared/components/ui/dialog"
 import { Form } from "@/shared/components/ui/form"
 
 type ProductoFormProps = {
-  producto: Producto
+  /** null = alta de un producto nuevo. */
+  producto: Producto | null
   guardando: boolean
   onGuardar: (datos: ProductoInput) => void
   onCancelar: () => void
@@ -25,25 +26,27 @@ export function ProductoForm({
 }: ProductoFormProps) {
   const form = useForm<ProductoInput>({
     resolver: zodResolver(productoSchema),
+    // En el alta arranca visible y sin destacar; las dimensiones y el precio
+    // quedan vacíos (null) porque son opcionales hasta que se sepan.
     defaultValues: {
-      nombre: producto.nombre,
-      slug: producto.slug ?? "",
-      categoria: producto.categoria ?? "",
-      descripcion: producto.descripcion ?? "",
-      largo: producto.largo,
-      ancho: producto.ancho,
-      alto: producto.alto,
-      precio: producto.precio,
-      unidad_minima: producto.unidad_minima,
-      desc_x100: producto.desc_x100,
-      desc_x250: producto.desc_x250,
-      desc_x500: producto.desc_x500,
-      tipo_carton: producto.tipo_carton ?? "",
-      plazo_entrega: producto.plazo_entrega ?? "",
-      admite_impresion: producto.admite_impresion,
-      imagen_url: producto.imagen_url ?? "",
-      activo: producto.activo,
-      destacado: producto.destacado,
+      nombre: producto?.nombre ?? "",
+      slug: producto?.slug ?? "",
+      categoria: producto?.categoria ?? "",
+      descripcion: producto?.descripcion ?? "",
+      largo: producto?.largo ?? null,
+      ancho: producto?.ancho ?? null,
+      alto: producto?.alto ?? null,
+      precio: producto?.precio ?? null,
+      unidad_minima: producto?.unidad_minima ?? 1,
+      desc_x100: producto?.desc_x100 ?? 0,
+      desc_x250: producto?.desc_x250 ?? 0,
+      desc_x500: producto?.desc_x500 ?? 0,
+      tipo_carton: producto?.tipo_carton ?? "",
+      plazo_entrega: producto?.plazo_entrega ?? "",
+      admite_impresion: producto?.admite_impresion ?? false,
+      imagen_url: producto?.imagen_url ?? "",
+      activo: producto?.activo ?? true,
+      destacado: producto?.destacado ?? false,
     },
   })
 
@@ -75,8 +78,10 @@ export function ProductoForm({
                 <Loader2 className="animate-spin" aria-hidden="true" />
                 Guardando…
               </>
-            ) : (
+            ) : producto ? (
               "Guardar cambios"
+            ) : (
+              "Crear producto"
             )}
           </Button>
         </DialogFooter>
