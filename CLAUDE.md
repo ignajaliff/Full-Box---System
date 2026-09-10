@@ -186,7 +186,8 @@ Funciones y triggers creados:
 * `public.tiene_rol(text)` — `SECURITY DEFINER`, `search_path` fijo, `EXECUTE` solo para
   `authenticated`. Usarla en toda política RLS que chequee rol.
 * `public.handle_new_user()` — trigger `on_auth_user_created` sobre `auth.users`: crea la fila
-  en `user_roles` con rol `admin`. `EXECUTE` revocado a todos (solo la usa el trigger).
+  en `user_roles` con rol `pendiente` (NO otorga privilegios). `EXECUTE` revocado a todos
+  (solo la usa el trigger). Ver [supabase/handle_new_user_pendiente.sql](supabase/handle_new_user_pendiente.sql).
 * `set_updated_at` — trigger de `moddatetime` sobre `user_roles`.
 
 ---
@@ -196,6 +197,7 @@ Funciones y triggers creados:
 | Rol | Permisos |
 |-----|----------|
 | admin | Acceso total al sistema |
+| pendiente | Ninguno. Pasa el login pero no pasa el RLS: ve "Sin autorización" |
 
 Los roles definitivos todavía no están definidos. Por ahora existe solo `admin`.
 Al sumar roles nuevos hay que actualizar: la constante `ROLES` de
@@ -203,17 +205,22 @@ Al sumar roles nuevos hay que actualizar: la constante `ROLES` de
 Supabase y esta tabla.
 
 **Alta de usuarios**: solo por invitación del administrador, desde Supabase → Authentication →
-Users → "Add user". El trigger `handle_new_user` le crea la fila en `user_roles` con rol `admin`.
+Users → "Add user". El trigger `handle_new_user` le crea la fila en `user_roles` con rol
+`pendiente`; el admin lo habilita a mano:
+`update public.user_roles set rol = 'admin' where id = '<uuid>';`
 El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/security-rules.txt` §1).
 
 > Cuando se sumen roles de menor privilegio, cambiar el rol por defecto del trigger
 > `handle_new_user` — el default debe ser siempre el de MENOR privilegio del sistema.
+> Hoy ese default es `pendiente`, que no otorga ningún permiso.
 
 ---
 
 ## Checklist de seguridad
 
 - [ ] Signup público deshabilitado en el dashboard (verificar `disable_signup`) — **PENDIENTE**
+- [x] El alta de usuario NO otorga privilegios: `handle_new_user` crea la fila con rol
+      `pendiente` (2026-09-10). Mitiga el signup abierto, pero no lo reemplaza
 - [x] Ninguna política `FOR ALL` para lecturas, ninguna con `(true)`, ninguna que dependa solo de `auth.uid() IS NOT NULL`
 - [ ] Buckets de storage privados + signed URLs para datos de clientes (no hay storage todavía)
 - [x] Tabla `user_roles` con RLS propio: nadie puede modificar su rol desde el cliente
@@ -449,10 +456,11 @@ password protection.
 * Módulo Web (hoy visible en el sidebar como "Pronto", sin página)
 
 **Problemas conocidos o deuda técnica**:
-* **SEGURIDAD — signup público abierto**: `disable_signup` está en `false`. Como el trigger
-  `handle_new_user` asigna rol `admin`, cualquiera con la anon key (que viaja en el bundle JS)
-  puede registrarse y quedar como administrador. Cerrarlo en Authentication → Sign In / Providers
-  → "Allow new users to sign up" = OFF. Verificar después con
+* **SEGURIDAD — signup público abierto**: `disable_signup` sigue en `false`, así que cualquiera
+  con la anon key (que viaja en el bundle JS) puede registrarse. Ya NO queda como administrador:
+  desde el 2026-09-10 el trigger `handle_new_user` crea la fila con rol `pendiente`, que no pasa
+  el RLS. Falta igual cerrarlo en Authentication → Sign In / Providers →
+  "Allow new users to sign up" = OFF. Verificar después con
   `GET /auth/v1/settings` (header `apikey`).
 * El advisor de seguridad marca un WARN por `tiene_rol()` ejecutable por `authenticated`. Es
   **esperado y correcto**: las políticas RLS la necesitan. Solo devuelve un booleano sobre quien
