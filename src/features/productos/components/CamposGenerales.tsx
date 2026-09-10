@@ -1,5 +1,6 @@
 import type { Control } from "react-hook-form"
 
+import { CampoCategoria } from "@/features/productos/components/CampoCategoria"
 import { CampoNumerico } from "@/features/productos/components/CampoNumerico"
 import type { ProductoInput } from "@/features/productos/schema"
 import {
@@ -40,23 +41,7 @@ export function CamposGenerales({ control }: CamposGeneralesProps) {
         />
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
-            control={control}
-            name="categoria"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoría</FormLabel>
-                <FormControl>
-                  <Input
-                    autoComplete="off"
-                    placeholder="Ej. E-commerce"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <CampoCategoria control={control} />
 
           <FormField
             control={control}

@@ -1,6 +1,7 @@
 import type { Control } from "react-hook-form"
 
 import { CampoBooleano } from "@/features/productos/components/CampoBooleano"
+import { CampoImagen } from "@/features/productos/components/CampoImagen"
 import { CampoNumerico } from "@/features/productos/components/CampoNumerico"
 import type { ProductoInput } from "@/features/productos/schema"
 import {
@@ -112,23 +113,7 @@ export function CamposComerciales({ control }: CamposComercialesProps) {
           Web
         </h3>
 
-        <FormField
-          control={control}
-          name="imagen_url"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Imagen (URL)</FormLabel>
-              <FormControl>
-                <Input
-                  autoComplete="off"
-                  placeholder="https://…"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <CampoImagen control={control} />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <CampoBooleano

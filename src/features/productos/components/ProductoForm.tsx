@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2 } from "lucide-react"
+import { Loader2, Trash2 } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import { CamposComerciales } from "@/features/productos/components/CamposComerciales"
@@ -16,6 +16,8 @@ type ProductoFormProps = {
   guardando: boolean
   onGuardar: (datos: ProductoInput) => void
   onCancelar: () => void
+  /** Solo en edición: abre la confirmación de borrado. */
+  onEliminar?: () => void
 }
 
 export function ProductoForm({
@@ -23,6 +25,7 @@ export function ProductoForm({
   guardando,
   onGuardar,
   onCancelar,
+  onEliminar,
 }: ProductoFormProps) {
   const form = useForm<ProductoInput>({
     resolver: zodResolver(productoSchema),
@@ -61,6 +64,24 @@ export function ProductoForm({
           <CamposGenerales control={form.control} />
           <CamposComerciales control={form.control} />
         </div>
+
+        {/* Eliminar va en su propia fila, lejos de Guardar: es destructivo y
+            no tiene que quedar pegado al botón que se usa todo el tiempo. */}
+        {onEliminar ? (
+          <div className="border-t border-hairline px-4 pt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onEliminar}
+              disabled={guardando}
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 aria-hidden="true" />
+              Eliminar producto
+            </Button>
+          </div>
+        ) : null}
 
         <DialogFooter className="border-t border-hairline p-4">
           <Button

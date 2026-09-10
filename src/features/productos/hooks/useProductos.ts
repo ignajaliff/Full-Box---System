@@ -1,5 +1,10 @@
+import { useMemo } from "react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import {
+  BUCKET_PRODUCTOS,
+  rutaEnBucket,
+} from "@/features/productos/hooks/useSubirImagen"
 import type { ProductoInput } from "@/features/productos/schema"
 import type { Producto } from "@/features/productos/types"
 import { supabase } from "@/integrations/supabase/client"
@@ -162,4 +167,91 @@ export function useActualizarProducto() {
       if (import.meta.env.DEV) console.error(error)
     },
   })
+}
+
+/** Postgres: violación de clave foránea (el producto está usado en remitos). */
+const FK_VIOLATION = "23503"
+
+/** El producto está en algún remito, así que la base no deja borrarlo. */
+export class ProductoEnUsoError extends Error {
+  constructor() {
+    super("El producto está usado en remitos")
+    this.name = "ProductoEnUsoError"
+  }
+}
+
+/**
+ * Borra el producto y, si tenía foto propia, el archivo del bucket.
+ *
+ * `items_remito` referencia `productos` con ON DELETE RESTRICT: un producto
+ * que ya salió en un remito NO se puede borrar (si no, el historial quedaría
+ * apuntando a la nada). En ese caso se lanza `ProductoEnUsoError` para que la
+ * UI ofrezca ocultarlo en vez de mostrar un error sin salida.
+ */
+export function useEliminarProducto() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (producto: Producto) => {
+      const { error } = await supabase
+        .from("productos")
+        .delete()
+        .eq("id", producto.id)
+
+      if (error) {
+        if (error.code === FK_VIOLATION) throw new ProductoEnUsoError()
+        throw error
+      }
+
+      // La fila ya no está: si la foto queda huérfana, se borra. Un fallo acá
+      // no revierte el borrado, así que no se propaga (solo deja un archivo).
+      const ruta = rutaEnBucket(producto.imagen_url)
+      if (ruta) {
+        const { error: errorFoto } = await supabase.storage
+          .from(BUCKET_PRODUCTOS)
+          .remove([ruta])
+        if (errorFoto && import.meta.env.DEV) console.error(errorFoto)
+      }
+    },
+    onSuccess: () => {
+      toast({ title: "Producto eliminado" })
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY_PRODUCTOS })
+    },
+    onError: (error) => {
+      // El caso "está en uso" lo resuelve la UI con el diálogo, no un toast.
+      if (error instanceof ProductoEnUsoError) return
+
+      toast({
+        title: "No se pudo eliminar el producto",
+        description: "Intentá de nuevo o contactá al administrador.",
+        variant: "destructive",
+      })
+      if (import.meta.env.DEV) console.error(error)
+    },
+  })
+}
+
+/**
+ * Categorías ya usadas en el catálogo, únicas y ordenadas.
+ *
+ * Sale del mismo listado que ya está en caché (no agrega un viaje a la base):
+ * sirve para sugerirlas al cargar un producto y evitar que se dupliquen por
+ * diferencias de tipeo.
+ */
+export function useCategorias() {
+  const { data: productos } = useProductos()
+
+  return useMemo(() => {
+    if (!productos) return []
+
+    const unicas = [
+      ...new Set(
+        productos
+          .map((p) => p.categoria)
+          .filter((c): c is string => c !== null && c.trim() !== "")
+      ),
+    ]
+
+    return unicas.sort((a, b) => a.localeCompare(b, "es"))
+  }, [productos])
 }
