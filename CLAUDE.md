@@ -218,7 +218,8 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
 
 ## Checklist de seguridad
 
-- [ ] Signup público deshabilitado en el dashboard (verificar `disable_signup`) — **PENDIENTE**
+- [x] Signup público deshabilitado en el dashboard (`disable_signup: true`, 2026-09-10).
+      Verificado con un POST real a `/auth/v1/signup`: devuelve 422 `signup_disabled`
 - [x] El alta de usuario NO otorga privilegios: `handle_new_user` crea la fila con rol
       `pendiente` (2026-09-10). Mitiga el signup abierto, pero no lo reemplaza
 - [x] Ninguna política `FOR ALL` para lecturas, ninguna con `(true)`, ninguna que dependa solo de `auth.uid() IS NOT NULL`
@@ -456,12 +457,11 @@ password protection.
 * Módulo Web (hoy visible en el sidebar como "Pronto", sin página)
 
 **Problemas conocidos o deuda técnica**:
-* **SEGURIDAD — signup público abierto**: `disable_signup` sigue en `false`, así que cualquiera
-  con la anon key (que viaja en el bundle JS) puede registrarse. Ya NO queda como administrador:
-  desde el 2026-09-10 el trigger `handle_new_user` crea la fila con rol `pendiente`, que no pasa
-  el RLS. Falta igual cerrarlo en Authentication → Sign In / Providers →
-  "Allow new users to sign up" = OFF. Verificar después con
-  `GET /auth/v1/settings` (header `apikey`).
+* ~~**SEGURIDAD — signup público abierto**~~ — **RESUELTO el 2026-09-10**, en dos capas:
+  `disable_signup: true` en el dashboard (un POST a `/auth/v1/signup` con la anon key devuelve
+  422 `signup_disabled`) y el trigger `handle_new_user` creando la fila con rol `pendiente`,
+  que no pasa el RLS. Si alguna vez se reabre el signup, la segunda capa sigue conteniendo.
+  Reverificar con `GET /auth/v1/settings` (header `apikey`).
 * El advisor de seguridad marca un WARN por `tiene_rol()` ejecutable por `authenticated`. Es
   **esperado y correcto**: las políticas RLS la necesitan. Solo devuelve un booleano sobre quien
   la llama (`auth.uid()`), no filtra datos de terceros.
