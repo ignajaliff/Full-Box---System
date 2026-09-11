@@ -33,9 +33,8 @@ function aFilaProducto(datos: ProductoInput) {
     alto: datos.alto,
     precio: datos.precio,
     unidad_minima: datos.unidad_minima,
-    desc_x100: datos.desc_x100,
-    desc_x250: datos.desc_x250,
-    desc_x500: datos.desc_x500,
+    // Ordenados por cantidad: el formulario no exige el orden, la base sí.
+    tramos_precio: [...datos.tramos].sort((a, b) => a.cantidad - b.cantidad),
     tipo_carton: aNulo(datos.tipo_carton),
     plazo_entrega: aNulo(datos.plazo_entrega),
     admite_impresion: datos.admite_impresion,

@@ -93,7 +93,7 @@ el navegador tome los assets nuevos.
 |--------|--------|-----------------|-------|
 | Auth | Completo | `user_roles` | Login **real** con Supabase auth. Alta solo por invitación del admin |
 | Dashboard | UI lista | — | `/dashboard` con navegador lateral (AppLayout). Cards de resumen placeholder |
-| Productos | Completo | `productos` | `/productos` estilo CRM: buscador (nombre/medida/categoría), precio, switch de visibilidad web y estrella de destacado. Edición en panel lateral por secciones (Información / Dimensiones / Comercial / Producción / Web). Arriba, el cotizador **Caja personalizada** (ver deuda técnica: tarifa hardcodeada) |
+| Productos | Completo | `productos` | `/productos` estilo CRM: buscador (nombre/medida/categoría), precio, switch de visibilidad web y estrella de destacado. Alta, edición (panel lateral por secciones: Información / Dimensiones / Comercial / Producción / Web), foto y borrado. **Tramos de precio por cantidad** (hasta 4, `tramos_precio`) en vez de descuentos fijos. Arriba, el cotizador **Caja personalizada** (ver deuda técnica: tarifa hardcodeada) |
 | Clientes | Completo | `clientes` | `/clientes` estilo CRM: buscador (nombre/CUIT/email/teléfono), alta y edición por modal. CUIT único con formato validado en la base |
 | Remitos | Completo | `remitos`, `items_remito` | `/remitos`: alta y **edición** con cliente + items (RPCs `crear_remito` / `editar_remito`), chips de filtro por estado, botón de avance en cada fila, **edición al clickear la fila**
 (panel lateral, igual que Productos) y menú «⋯» solo para anular. Badges de estado y de cobro independientes |
@@ -111,7 +111,8 @@ Estados posibles: `Pendiente` / `En desarrollo` / `UI lista` / `Completo`
 - productos    → catálogo de cajas. RLS: solo admin (lectura y escritura separadas
                  por comando, WITH CHECK en escritura). Columnas: nombre, medida,
                  slug, categoria, descripcion, largo/ancho/alto (cm), precio,
-                 unidad_minima, desc_x100/x250/x500, tipo_carton, plazo_entrega,
+                 unidad_minima, tramos_precio (jsonb, hasta 4 {cantidad, precio}),
+                 desc_x100/x250/x500 (TRANSITORIAS, ver deuda), tipo_carton, plazo_entrega,
                  admite_impresion, imagen_url, activo, destacado
 - clientes     → razon_social, cuit (único), condicion_iva, telefono, email,
                  direccion_entrega
@@ -293,6 +294,22 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
 * **Formulario de producto en secciones**: para respetar el límite de 300 líneas, el modal se
   compone de `CamposGenerales` + `CamposComerciales`, con helpers `CampoNumerico` (vacío → null)
   y `CampoBooleano` reutilizables en `features/productos/components/`.
+* **Tramos de precio por cantidad** (2026-09-11, reemplaza a `desc_x100/x250/x500`): los tres
+  descuentos porcentuales fijos no servían para casos reales como «mínimo 20 y un solo tramo
+  en 60». Ahora `productos.tramos_precio` (jsonb) guarda **hasta 4** tramos `{cantidad, precio}`:
+  desde esa cantidad, ese precio unitario. Se eligió jsonb y no una tabla aparte porque el tope
+  es 4, se edita siempre junto al producto (un solo UPDATE, sin RPC) y la landing lo lee con el
+  mismo `select("*")`. La base lo valida en un CHECK con `tramos_precio_validos(tramos,
+  unidad_minima)` (IMMUTABLE, sin acceso a tablas): array ≤ 4, cantidad entera **> unidad_minima**,
+  creciente y sin repetir, precio ≥ 0. SQL en [supabase/tramos_precio.sql](supabase/tramos_precio.sql).
+  Frontend: `TramoPrecio` + `leerTramos(json)` + `MAX_TRAMOS` en `productos/types.ts` (el tipo
+  generado es `Json`, hay que validar la forma al leer); el schema exige lo mismo que la base con
+  mensajes por fila (`superRefine`) salvo el orden, que se aplica al guardar (`aFilaProducto`
+  ordena). UI en [CamposTramos](src/features/productos/components/CamposTramos.tsx): filas
+  dinámicas con `useFieldArray`, vista previa «100+ u. → $1.400 c/u» y botón «Agregar tramo»
+  hasta el tope. `CampoNumerico` acepta rutas indexadas (`tramos.${n}.cantidad`). Los descuentos
+  que había (eran los defaults 8/15/22, nadie los cargó) se migraron a tramos con el precio
+  resultante.
 * **Select nativo estilizado** en
   [src/shared/components/ui/native-select.tsx](src/shared/components/ui/native-select.tsx) para
   listas cortas y fijas (ej. condición de IVA) — evita sumar `@radix-ui/react-select`.
@@ -418,13 +435,14 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
 
 ## Estado actual del desarrollo
 
-**Última sesión**: 2026-08-18 — Finanzas se dividió en dos subpáginas (Historial de cobros y
-Pendientes de cobro), desplegadas bajo el item del sidebar; `/finanzas` entra por el historial.
-El sidebar ahora soporta `subitems`. La confirmación de cobro dejó de ser pantalla completa y
-pasó a ocupar solo el área de contenido. Antes (2026-08-17) se había rehecho la paleta cálida,
-el layout a ras y el desglose desplegable del historial. Cambios sin commitear todavía.
-**Próximo paso**: módulo Web. Pendientes de dashboard: cerrar signup público y activar leaked
-password protection.
+**Última sesión**: 2026-09-11 — Productos pasó de tres descuentos fijos (100/250/500) a
+**tramos de precio por cantidad** (hasta 4, `tramos_precio` jsonb validado en la base), con
+migración de datos y formulario dinámico. Las columnas `desc_x*` siguen existiendo hasta que la
+landing lea el formato nuevo. Antes (2026-09-10, socio): alta/foto/borrado de productos, bucket
+`productos`, signup cerrado y rol `pendiente` por defecto.
+**Próximo paso**: desplegar la landing (ya migrada a `tramos_precio` en código) y recién
+entonces borrar `desc_x100/x250/x500` (PASO 2) y regenerar tipos en los dos proyectos. Luego
+módulo Web. Pendiente de dashboard: leaked password protection.
 
 **Lo que está funcionando**:
 * Estructura base del proyecto según `rules.txt` (`app/`, `features/`, `shared/`, `lib/`, `integrations/`)
@@ -452,7 +470,9 @@ password protection.
 * `npx tsc --noEmit` y `npm run build` pasan sin errores
 
 **Lo que está pendiente**:
-* **Deshabilitar el signup público** en el dashboard (ver deuda técnica abajo)
+* **Borrar `desc_x100/x250/x500`** (PASO 2 de [supabase/tramos_precio.sql](supabase/tramos_precio.sql)):
+  la landing YA lee `tramos_precio` en su código (2026-09-11), pero hay que esperar a que esa
+  versión esté **desplegada** — la publicada hoy todavía usa las columnas viejas
 * **Activar "Leaked password protection"** en Auth → Passwords (lo marca el advisor)
 * Módulo Web (hoy visible en el sidebar como "Pronto", sin página)
 
@@ -465,6 +485,11 @@ password protection.
 * El advisor de seguridad marca un WARN por `tiene_rol()` ejecutable por `authenticated`. Es
   **esperado y correcto**: las políticas RLS la necesitan. Solo devuelve un booleano sobre quien
   la llama (`auth.uid()`), no filtra datos de terceros.
+* **`desc_x100/x250/x500` son TRANSITORIAS** (2026-09-11): el sistema ya no las lee ni escribe
+  (usa `tramos_precio`), pero la landing todavía las consume y comparte el mismo proyecto de
+  Supabase — borrarlas hoy dejaría precios `NaN` en la ficha pública. Sus defaults pasaron a 0
+  para que un producto nuevo no muestre en la web descuentos que nadie cargó. Mientras dure la
+  transición, **la web muestra los tramos viejos, no lo que se edita en el sistema**.
 * **Cotizador de caja personalizada con tarifa hardcodeada** (2026-08-14): el bloque de
   `/productos` ([CajaPersonalizada.tsx](src/features/productos/components/CajaPersonalizada.tsx))
   calcula el precio con la constante `TARIFA` (precio del cartón por m², 15% de desperdicio de

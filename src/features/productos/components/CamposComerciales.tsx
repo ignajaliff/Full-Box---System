@@ -3,6 +3,7 @@ import type { Control } from "react-hook-form"
 import { CampoBooleano } from "@/features/productos/components/CampoBooleano"
 import { CampoImagen } from "@/features/productos/components/CampoImagen"
 import { CampoNumerico } from "@/features/productos/components/CampoNumerico"
+import { CamposTramos } from "@/features/productos/components/CamposTramos"
 import type { ProductoInput } from "@/features/productos/schema"
 import {
   FormControl,
@@ -42,23 +43,7 @@ export function CamposComerciales({ control }: CamposComercialesProps) {
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <CampoNumerico
-            control={control}
-            name="desc_x100"
-            etiqueta="Desc. 100+ (%)"
-          />
-          <CampoNumerico
-            control={control}
-            name="desc_x250"
-            etiqueta="Desc. 250+ (%)"
-          />
-          <CampoNumerico
-            control={control}
-            name="desc_x500"
-            etiqueta="Desc. 500+ (%)"
-          />
-        </div>
+        <CamposTramos control={control} />
       </section>
 
       <section className="space-y-4 border-t pt-5">

@@ -18,9 +18,8 @@ type NombreCampoNumerico =
   | "alto"
   | "precio"
   | "unidad_minima"
-  | "desc_x100"
-  | "desc_x250"
-  | "desc_x500"
+  | `tramos.${number}.cantidad`
+  | `tramos.${number}.precio`
 
 type CampoNumericoProps = {
   control: Control<ProductoInput>

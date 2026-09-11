@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { CamposComerciales } from "@/features/productos/components/CamposComerciales"
 import { CamposGenerales } from "@/features/productos/components/CamposGenerales"
 import { productoSchema, type ProductoInput } from "@/features/productos/schema"
-import type { Producto } from "@/features/productos/types"
+import { leerTramos, type Producto } from "@/features/productos/types"
 import { Button } from "@/shared/components/ui/button"
 import { DialogFooter } from "@/shared/components/ui/dialog"
 import { Form } from "@/shared/components/ui/form"
@@ -41,9 +41,7 @@ export function ProductoForm({
       alto: producto?.alto ?? null,
       precio: producto?.precio ?? null,
       unidad_minima: producto?.unidad_minima ?? 1,
-      desc_x100: producto?.desc_x100 ?? 0,
-      desc_x250: producto?.desc_x250 ?? 0,
-      desc_x500: producto?.desc_x500 ?? 0,
+      tramos: producto ? leerTramos(producto.tramos_precio) : [],
       tipo_carton: producto?.tipo_carton ?? "",
       plazo_entrega: producto?.plazo_entrega ?? "",
       admite_impresion: producto?.admite_impresion ?? false,
