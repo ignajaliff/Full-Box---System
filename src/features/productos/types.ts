@@ -13,6 +13,12 @@ export type TramoPrecio = {
 export const MAX_TRAMOS = 4
 
 /**
+ * Fotos por producto: `imagen_url` (principal) + hasta 4 en `imagenes_extra`.
+ * El 4 lo exige el CHECK `productos_imagenes_extra_check`.
+ */
+export const MAX_FOTOS = 5
+
+/**
  * `tramos_precio` llega como Json genérico (el tipo generado no distingue el
  * contenido), así que se valida la forma antes de usarlo. Devuelve los tramos
  * ordenados por cantidad; lo que no tenga la forma esperada se descarta.

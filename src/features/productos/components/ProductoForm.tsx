@@ -46,6 +46,7 @@ export function ProductoForm({
       plazo_entrega: producto?.plazo_entrega ?? "",
       admite_impresion: producto?.admite_impresion ?? false,
       imagen_url: producto?.imagen_url ?? "",
+      imagenes_extra: producto?.imagenes_extra ?? [],
       activo: producto?.activo ?? true,
       destacado: producto?.destacado ?? false,
     },

@@ -39,6 +39,7 @@ function aFilaProducto(datos: ProductoInput) {
     plazo_entrega: aNulo(datos.plazo_entrega),
     admite_impresion: datos.admite_impresion,
     imagen_url: aNulo(datos.imagen_url),
+    imagenes_extra: datos.imagenes_extra,
     activo: datos.activo,
     destacado: datos.destacado,
   }
@@ -202,14 +203,17 @@ export function useEliminarProducto() {
         throw error
       }
 
-      // La fila ya no está: si la foto queda huérfana, se borra. Un fallo acá
-      // no revierte el borrado, así que no se propaga (solo deja un archivo).
-      const ruta = rutaEnBucket(producto.imagen_url)
-      if (ruta) {
-        const { error: errorFoto } = await supabase.storage
+      // La fila ya no está: las fotos del bucket (principal + extras) quedan
+      // huérfanas y se borran. Un fallo acá no revierte el borrado, así que
+      // no se propaga (solo deja archivos sueltos).
+      const rutas = [producto.imagen_url, ...producto.imagenes_extra]
+        .map(rutaEnBucket)
+        .filter((ruta): ruta is string => ruta !== null)
+      if (rutas.length > 0) {
+        const { error: errorFotos } = await supabase.storage
           .from(BUCKET_PRODUCTOS)
-          .remove([ruta])
-        if (errorFoto && import.meta.env.DEV) console.error(errorFoto)
+          .remove(rutas)
+        if (errorFotos && import.meta.env.DEV) console.error(errorFotos)
       }
     },
     onSuccess: () => {

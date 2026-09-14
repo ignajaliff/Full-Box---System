@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { MAX_TRAMOS } from "@/features/productos/types"
+import { MAX_FOTOS, MAX_TRAMOS } from "@/features/productos/types"
 
 /**
  * Campos editables del producto. `medida` NO se edita: la autogenera el
@@ -69,6 +69,18 @@ export const productoSchema = z
         (valor) => valor === "" || /^https?:\/\/.+/.test(valor),
         "Debe ser una URL (https://…)"
       ),
+    // Fotos 2 a 5: solo URLs cargadas (sin huecos), el orden es el de la galería.
+    imagenes_extra: z
+      .array(
+        z
+          .string()
+          .trim()
+          .refine(
+            (valor) => /^https?:\/\/.+/.test(valor),
+            "Debe ser una URL (https://…)"
+          )
+      )
+      .max(MAX_FOTOS - 1, `Hasta ${MAX_FOTOS} fotos en total`),
     activo: z.boolean(),
     destacado: z.boolean(),
   })

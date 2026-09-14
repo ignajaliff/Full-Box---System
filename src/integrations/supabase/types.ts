@@ -157,6 +157,7 @@ export type Database = {
           destacado: boolean
           id: string
           imagen_url: string | null
+          imagenes_extra: string[]
           largo: number | null
           medida: string
           nombre: string
@@ -182,6 +183,7 @@ export type Database = {
           destacado?: boolean
           id?: string
           imagen_url?: string | null
+          imagenes_extra?: string[]
           largo?: number | null
           medida: string
           nombre: string
@@ -207,6 +209,7 @@ export type Database = {
           destacado?: boolean
           id?: string
           imagen_url?: string | null
+          imagenes_extra?: string[]
           largo?: number | null
           medida?: string
           nombre?: string

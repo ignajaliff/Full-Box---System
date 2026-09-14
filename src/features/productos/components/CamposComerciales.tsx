@@ -1,7 +1,7 @@
 import type { Control } from "react-hook-form"
 
 import { CampoBooleano } from "@/features/productos/components/CampoBooleano"
-import { CampoImagen } from "@/features/productos/components/CampoImagen"
+import { CampoImagenes } from "@/features/productos/components/CampoImagenes"
 import { CampoNumerico } from "@/features/productos/components/CampoNumerico"
 import { CamposTramos } from "@/features/productos/components/CamposTramos"
 import type { ProductoInput } from "@/features/productos/schema"
@@ -98,7 +98,7 @@ export function CamposComerciales({ control }: CamposComercialesProps) {
           Web
         </h3>
 
-        <CampoImagen control={control} />
+        <CampoImagenes control={control} />
 
         <div className="grid gap-4 sm:grid-cols-2">
           <CampoBooleano

@@ -139,7 +139,7 @@ export function ProductoDialog({
             <DialogDescription>
               {confirmacion === "en-uso"
                 ? "El producto ya figura en remitos, así que borrarlo dejaría ese historial incompleto. Podés ocultarlo: deja de verse en la web y en la landing, pero los remitos quedan intactos."
-                : "Se elimina del catálogo junto con su foto. No se puede deshacer."}
+                : "Se elimina del catálogo junto con sus fotos. No se puede deshacer."}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
