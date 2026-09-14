@@ -85,6 +85,18 @@ en el puerto 80 (el que espera CapRover).
 `/remitos` o recargar da 404. El `index.html` va con `no-store` para que tras cada deploy
 el navegador tome los assets nuevos.
 
+**Aviso de versión nueva** (2026-09-14): cada build genera un id (`BUILD_ID` en
+`vite.config.ts`, marca de tiempo — no el sha de git porque `.git` no entra en la imagen) que
+se incrusta en el bundle como `__BUILD_ID__` y se publica en `dist/version.json` (plugin
+`versionJson`). [useVersionNueva](src/shared/hooks/useVersionNueva.ts) compara los dos al
+arrancar, cada 5 min y al volver a la pestaña; si difieren,
+[AvisoVersionNueva](src/shared/components/layout/AvisoVersionNueva.tsx) (montado en `App.tsx`)
+muestra un aviso flotante con «Actualizar» (recarga) y «Más tarde» (30 min). `version.json`
+va con `no-store` en nginx — si se cacheara, el aviso nunca se enteraría. Para saber qué
+versión está desplegada: abrir `/version.json`. Complemento: si un chunk lazy falla porque
+el deploy lo reemplazó («Failed to fetch dynamically imported module»), `ErrorBoundary`
+recarga solo, como mucho una vez por minuto.
+
 ---
 
 ## Módulos del sistema
@@ -93,7 +105,7 @@ el navegador tome los assets nuevos.
 |--------|--------|-----------------|-------|
 | Auth | Completo | `user_roles` | Login **real** con Supabase auth. Alta solo por invitación del admin |
 | Dashboard | UI lista | — | `/dashboard` con navegador lateral (AppLayout). Cards de resumen placeholder |
-| Productos | Completo | `productos` | `/productos` estilo CRM: buscador (nombre/medida/categoría), precio, switch de visibilidad web y estrella de destacado. Alta, edición (panel lateral por secciones: Información / Dimensiones / Comercial / Producción / Web), foto y borrado. **Tramos de precio por cantidad** (hasta 4, `tramos_precio`) en vez de descuentos fijos. Arriba, el cotizador **Caja personalizada** (ver deuda técnica: tarifa hardcodeada) |
+| Productos | Completo | `productos` | `/productos` estilo CRM: buscador (nombre/medida/categoría), precio, switch de visibilidad web y estrella de destacado. Alta, edición (panel lateral por secciones: Información / Dimensiones / Comercial / Producción / Web), **hasta 5 fotos** (galería ordenada, la primera es la principal) y borrado. **Tramos de precio por cantidad** (hasta 4, `tramos_precio`) en vez de descuentos fijos. Arriba, el cotizador **Caja personalizada** (ver deuda técnica: tarifa hardcodeada) |
 | Clientes | Completo | `clientes` | `/clientes` estilo CRM: buscador (nombre/CUIT/email/teléfono), alta y edición por modal. CUIT único con formato validado en la base |
 | Remitos | Completo | `remitos`, `items_remito` | `/remitos`: alta y **edición** con cliente + items (RPCs `crear_remito` / `editar_remito`), chips de filtro por estado, botón de avance en cada fila, **edición al clickear la fila**
 (panel lateral, igual que Productos) y menú «⋯» solo para anular. Badges de estado y de cobro independientes |
@@ -113,7 +125,8 @@ Estados posibles: `Pendiente` / `En desarrollo` / `UI lista` / `Completo`
                  slug, categoria, descripcion, largo/ancho/alto (cm), precio,
                  unidad_minima, tramos_precio (jsonb, hasta 4 {cantidad, precio}),
                  desc_x100/x250/x500 (TRANSITORIAS, ver deuda), tipo_carton, plazo_entrega,
-                 admite_impresion, imagen_url, activo, destacado
+                 admite_impresion, imagen_url (foto principal), imagenes_extra
+                 (text[], hasta 4 fotos más), activo, destacado
 - clientes     → razon_social, cuit (único), condicion_iva, telefono, email,
                  direccion_entrega
 - remitos      → numero (IDENTITY), cliente_id, estado, cobro_id, notas
@@ -310,6 +323,18 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
   hasta el tope. `CampoNumerico` acepta rutas indexadas (`tramos.${n}.cantidad`). Los descuentos
   que había (eran los defaults 8/15/22, nadie los cargó) se migraron a tramos con el precio
   resultante.
+* **Hasta 5 fotos por producto** (2026-09-14): `imagen_url` sigue siendo la foto PRINCIPAL (la
+  que leen la tabla y la landing, sin cambios) y `productos.imagenes_extra` (`text[]`, CHECK de
+  máximo 4, sin nulos ni vacíos) guarda las demás en orden. Se eligió un array y no cuatro
+  columnas: un solo campo para validar, recorrer y borrar. SQL en
+  [supabase/imagenes_extra.sql](supabase/imagenes_extra.sql). En el formulario,
+  [CampoImagenes](src/features/productos/components/CampoImagenes.tsx) (reemplaza a
+  `CampoImagen`) muestra UNA galería de 5 casillas: se edita como lista ordenada (quitar,
+  «hacer principal» con la estrella, agregar hasta el tope) y al guardar se reparte en
+  `imagen_url` = primera + `imagenes_extra` = resto. Reutiliza `useSubirImagen` tal cual (sube
+  al elegir el archivo, mismo bucket). `useEliminarProducto` borra del bucket TODAS las fotos
+  del producto. Deuda heredada: una foto quitada del formulario (o subida y luego cancelada) no
+  se borra del bucket — solo se limpian al eliminar el producto.
 * **Select nativo estilizado** en
   [src/shared/components/ui/native-select.tsx](src/shared/components/ui/native-select.tsx) para
   listas cortas y fijas (ej. condición de IVA) — evita sumar `@radix-ui/react-select`.
@@ -426,6 +451,15 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
   cartón recortando la transparencia sobrante y centrándolo en un lienzo cuadrado con 8% de
   margen — el logo original es muy horizontal (2.28:1) y sin ese recentrado se ve aplastado
   en la pestaña. Si cambia el logo, regenerar los tres con ese mismo criterio.
+* **Aviso de versión nueva sin service worker** (2026-09-14): una SPA abierta nunca vuelve a
+  pedir el index.html, así que tras un deploy el usuario seguía en el bundle viejo hasta
+  recargar (y los chunks lazy nuevos fallaban). Se resolvió con un `version.json` emitido por
+  el build + un hook que lo compara con el id incrustado (ver sección Deploy). Se descartó
+  `vite-plugin-pwa`/service worker: dependencia nueva y mucho más superficie para un
+  problema que se resuelve con un fetch. El aviso es un componente propio y no un toast
+  porque los toasts se borran solos a los 5 s. Se puede posponer porque recargar pierde lo
+  que haya sin guardar en un formulario abierto. Colores neutros (sin cartón), según la regla
+  de acentos.
 * **Login a pantalla dividida**: panel de marca (verde petróleo `bg-secondary` + un radial
   sutil con el token `--primary`) a la izquierda y formulario a la derecha. Por debajo de `lg`
   el panel se oculta y el logo pasa arriba del título. El copy quedó en un solo mensaje —
@@ -435,7 +469,11 @@ El signup público debe quedar DESHABILITADO en el dashboard (ver `ai-pmp/securi
 
 ## Estado actual del desarrollo
 
-**Última sesión**: 2026-09-11 — Productos pasó de tres descuentos fijos (100/250/500) a
+**Última sesión**: 2026-09-14 — **Aviso flotante de versión nueva** tras cada deploy
+(`version.json` + `__BUILD_ID__`, ver Deploy) y recarga automática si falla un chunk lazy.
+También: Productos admite **hasta 5 fotos** (`imagen_url` principal +
+`imagenes_extra` text[] con tope 4) con galería ordenada en el formulario. Antes (2026-09-11):
+Productos pasó de tres descuentos fijos (100/250/500) a
 **tramos de precio por cantidad** (hasta 4, `tramos_precio` jsonb validado en la base), con
 migración de datos y formulario dinámico. Las columnas `desc_x*` siguen existiendo hasta que la
 landing lea el formato nuevo. Antes (2026-09-10, socio): alta/foto/borrado de productos, bucket
